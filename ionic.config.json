@@ -1,0 +1,7 @@
+{
+  "name": "pptx",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular"
+}
