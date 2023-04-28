@@ -1,0 +1,45 @@
+<ion-content>
+  
+    <form [formGroup]="registrationForm" (ngSubmit)="onSubmit()">
+    <ion-list>
+      <ion-item>
+        <ion-label position="stacked">Outlet Name</ion-label>
+        <ion-input type="text" formControlName="outletName" [value]="formData?.outletName"></ion-input>
+      </ion-item>
+      
+      <ion-item>
+        <ion-label position="stacked">Outlet Code</ion-label>
+        <ion-input type="text" formControlName="outletCode" [value]="formData?.outletCode"></ion-input>
+      </ion-item>
+      
+      <ion-item>
+        <ion-label position="stacked">Channel</ion-label>
+        <ion-input type="text" formControlName="channel" [value]="formData?.channel"></ion-input>
+      </ion-item>
+      
+      <ion-item>
+        <ion-label position="stacked">Township</ion-label>
+        <ion-input type="text" formControlName="township" [value]="formData?.township"></ion-input>
+      </ion-item>
+      
+      <ion-item>
+        <ion-label position="stacked">Team</ion-label>
+        <ion-input type="text" formControlName="team" [value]="formData?.team"></ion-input>
+      </ion-item>
+    </ion-list>
+
+  </form>
+
+  <ion-grid>
+    <ion-row>
+    <ion-col size="6" *ngFor="let photo of photoService.photos; index as position">
+      <ion-img [src]="photo.webviewPath"></ion-img>
+    </ion-col>
+    </ion-row>
+  </ion-grid>
+
+
+  <div class="ion-padding">
+    <ion-button type="button" (click)="confirmRegistration()">Next</ion-button>
+  </div>
+</ion-content>

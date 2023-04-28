@@ -1,0 +1,63 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>
+      Registration Form
+    </ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <form [formGroup]="registrationForm" (ngSubmit)="onSubmit()">
+    <ion-item>
+      <ion-label position="floating">Outlet Name *</ion-label>
+      <ion-input type="text" formControlName="outletName"></ion-input>
+    </ion-item>
+
+    <ion-item>
+      <ion-label position="floating">Outlet Code *</ion-label>
+      <ion-input type="text" formControlName="outletCode"></ion-input>
+    </ion-item>
+
+    <ion-item>
+      <ion-label position="floating">Channel *</ion-label>
+      <ion-select formControlName="channel">
+        <ion-select-option value="Distributor">Distributor</ion-select-option>
+        <ion-select-option value="Wholesaler">Wholesaler</ion-select-option>
+        <ion-select-option value="Retailer">Retailer</ion-select-option>
+        <ion-select-option value="Others">Others</ion-select-option>
+      </ion-select>
+    </ion-item>
+
+    <ion-item>
+      <ion-label position="floating">Township *</ion-label>
+      <ion-input type="text" formControlName="township"></ion-input>
+    </ion-item>
+
+    <ion-item>
+      <ion-label position="floating">Team *</ion-label>
+      <ion-select formControlName="team">
+        <ion-select-option value="Team A">Team A</ion-select-option>
+        <ion-select-option value="Team B">Team B</ion-select-option>
+        <ion-select-option value="Team C">Team C</ion-select-option>
+        <ion-select-option value="Others">Others</ion-select-option>
+      </ion-select>
+    </ion-item>
+
+    <ion-item>
+      <ion-label>Upload Images *</ion-label>
+      <ion-input type="file" (change)="onFileChange($event)" multiple accept="image/*"></ion-input>
+    </ion-item>
+
+    <ion-grid>
+      <ion-row>
+        <ion-col size="6" *ngFor="let photo of photoService.photos; index as position">
+          <div class="image-container">
+            <ion-img [src]="photo.webviewPath"></ion-img>
+          </div>
+        </ion-col>
+      </ion-row>
+    </ion-grid>
+
+    <ion-button expand="block" type="submit">Submit</ion-button>
+  </form>
+</ion-content>
