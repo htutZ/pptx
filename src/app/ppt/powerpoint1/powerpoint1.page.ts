@@ -54,16 +54,32 @@ export class Powerpoint1Page implements OnInit {
     const slide = pptx.addSlide();
     
     
-    slide.addText(`OUTLET NAME: ${this.formData.outletName || 'N/A'}`, { x: 0.5, y: 0.3, color: "093C99", bold: true, fontSize: 15 });
-    slide.addText(`OUTLET CODE: ${this.formData.outletCode || 'N/A'}`, { x: 0.5, y: 0.5, color: "093C99", bold: true, fontSize: 15 });
-  
-    // Add Channel, Township, Team
-    slide.addText(`CHANNEL: ${this.formData.channel || 'N/A'}`, { x: 0.5, y: 0.7, color: "093C99", bold: true, fontSize: 15 });
-    slide.addText(`TOWNSHIP: ${this.formData.township || 'N/A'}`, { x: 0.5, y: 0.9, color: "093C99", bold: true, fontSize: 15 });
-    slide.addText(`TEAM: ${this.formData.team || 'N/A'}`, { x: 0.5, y: 1.1, color: "093C99", bold: true, fontSize: 15 });
-  
+
+    if (this.formData.outletName) {
+      slide.addText(`OUTLET NAME: ${this.formData.outletName}`, { x: 0.5, y: 0.3, color: "093C99", bold: true, fontSize: 15 });
+    }
+    
+    if (this.formData.outletCode) {
+      slide.addText(`OUTLET CODE: ${this.formData.outletCode}`, { x: 0.5, y: 0.5, color: "093C99", bold: true, fontSize: 15 });
+    }
+    
+    // Add a slide with the channel, township, and team from the formData object
+    if (this.formData.channel) {
+      slide.addText(`CHANNEL: ${this.formData.channel}`, { x: 0.5, y: 0.7, color: "093C99", bold: true, fontSize: 15 });
+    }
+    
+    if (this.formData.township) {
+      slide.addText(`TOWNSHIP: ${this.formData.township}`, { x: 0.5, y: 0.9, color: "093C99", bold: true, fontSize: 15 });
+    }
+    
+    if (this.formData.team) {
+      slide.addText(`TEAM: ${this.formData.team}`, { x: 0.5, y: 1.1, color: "093C99", bold: true, fontSize: 15 });
+    }
+
     const firstPhotoData = this.photos[0].webviewPath;
-console.log(firstPhotoData, 'dddddd');
+    const secondPhotoData = this.photos[1].webviewPath;
+slide.addImage({ data: firstPhotoData, x: 0.5, y: 1.5, w: 4, h: 3 });
+slide.addImage({ data: secondPhotoData, x: 5, y: 1.5, w: 4, h: 3 });
     // 4. Save the Presentation
     const now = new Date();
     const fileName = `${now.getFullYear()}-${(now.getMonth() + 1)

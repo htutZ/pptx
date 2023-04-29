@@ -120,28 +120,28 @@ export class PhotoService {
     });
   
     // Add button to save edited image
-    const saveButton = document.createElement('button');
-    saveButton.innerHTML = 'Save';
-    saveButton.style.position = 'absolute';
-    saveButton.style.bottom = '0px';
-    saveButton.style.left = '50%';
-    saveButton.style.transform = 'translateX(-50%)';
-    document.body.appendChild(saveButton);
+    // const saveButton = document.createElement('button');
+    // saveButton.innerHTML = 'Save';
+    // saveButton.style.position = 'absolute';
+    // saveButton.style.bottom = '0px';
+    // saveButton.style.left = '50%';
+    // saveButton.style.transform = 'translateX(-50%)';
+    // document.body.appendChild(saveButton);
   
-    saveButton.addEventListener('click', async () => {
-      // Save edited image to filesystem and update photo data
-      const editedPhoto = await this.saveEditedPicture(canvas, photo);
-      const photoIndex = this.photos.findIndex((p) => p.filepath === photo.filepath);
-      this.photos[photoIndex] = editedPhoto;
+    // saveButton.addEventListener('click', async () => {
+    //   // Save edited image to filesystem and update photo data
+    //   const editedPhoto = await this.saveEditedPicture(canvas, photo);
+    //   const photoIndex = this.photos.findIndex((p) => p.filepath === photo.filepath);
+    //   this.photos[photoIndex] = editedPhoto;
   
-      Preferences.set({
-        key: this.PHOTO_STORAGE,
-        value: JSON.stringify(this.photos),
-      });
+    //   Preferences.set({
+    //     key: this.PHOTO_STORAGE,
+    //     value: JSON.stringify(this.photos),
+    //   });
   
-      canvas.dispose();
-      saveButton.remove();
-    });
+    //   canvas.dispose();
+    //   saveButton.remove();
+    // });
   }
   
 
