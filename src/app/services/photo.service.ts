@@ -11,29 +11,26 @@ import { fabric } from 'fabric';
 })
 export class PhotoService {
 
-  private PHOTO_STORAGE: string = 'photos';
-  
-  async loadSaved(): Promise<UserPhoto[]> {
+  private PHOTO_STORAGE = 'photos';
+  public photos: UserPhoto[] = [];
+
+  constructor() {}
+
+  public async loadSaved(): Promise<UserPhoto[]> {
     const photoList = await Preferences.get({ key: this.PHOTO_STORAGE });
     const photoListValue = photoList.value;
     this.photos = JSON.parse(photoListValue ?? '[]');
-  
-    for (let photo of this.photos) {
-      // Read each saved photo's data from the filesystem
+
+    for (const photo of this.photos) {
       const readFile = await Filesystem.readFile({
         path: photo.filepath,
         directory: Directory.Data
       });
-      // Load the photo data into a base64 encoded string
       photo.webviewPath = `data:image/jpeg;base64,${readFile.data}`;
     }
-  
+
     return this.photos;
   }
-  
-
-  public photos: UserPhoto[] = [];
-  constructor() { }
 
   public async addNewToGallery() {
     if (this.photos.length < 2) {
@@ -53,6 +50,7 @@ export class PhotoService {
       });
     }
   }
+
   public async takePicFromGallery() {
     if (this.photos.length < 2) {
       const capturedPhoto = await Camera.getPhoto({
@@ -61,41 +59,91 @@ export class PhotoService {
         source: Capacitor.isNative ? CameraSource.Camera : CameraSource.Photos,
         quality: 100
       });
-  
+
       const savedImageFile = await this.savePicture(capturedPhoto);
       this.photos.unshift(savedImageFile);
-  
+
       Preferences.set({
         key: this.PHOTO_STORAGE,
         value: JSON.stringify(this.photos)
       });
-  
+
       await this.editPicture(savedImageFile);
     }
   }
-  
+
   public async editPicture(photo: UserPhoto): Promise<void> {
     const canvas = new fabric.Canvas('canvas');
     canvas.setWidth(window.innerWidth);
     canvas.setHeight(window.innerHeight);
-  
-    const image = new fabric.Image(null, {
-      left: canvas.getWidth() / 2,
-      top: canvas.getHeight() / 2,
-      originX: 'center',
-      originY: 'center',
-    });
   
     const readFile = await Filesystem.readFile({
       path: photo.filepath,
       directory: Directory.Data,
     });
   
+    const imageElement = document.createElement('img');
+    imageElement.src = `data:image/jpeg;base64,${readFile.data}`;
+    const image = new fabric.Image(imageElement, {
+      left: canvas.getWidth() / 2,
+      top: canvas.getHeight() / 2,
+      originX: 'center',
+      originY: 'center',
+    });
+  
     image.setElement(document.createElement('img'));
     image.getElement().src = `data:image/jpeg;base64,${readFile.data}`;
     image.scaleToWidth(canvas.getWidth());
     canvas.add(image);
+  
+    // Add event listener to handle editing of image
+    image.on('mousedown', (event) => {
+      const originalEvent = event.e;
+      const pointer = canvas.getPointer(originalEvent);
+      const position = canvas.getPointer(originalEvent, true);
+      const options = {
+        left: pointer.x,
+        top: pointer.y,
+        strokeWidth: 6,
+        stroke: 'rgba(255, 0, 0, 0.5)',
+        fill: 'rgba(0, 0, 0, 0.5)',
+        width: position.x - pointer.x,
+        height: position.y - pointer.y,
+        transparentCorners: false,
+        cornerColor: 'blue',
+        cornerSize: 10,
+        selectable: false,
+      };
+  
+      const rect = new fabric.Rect(options);
+      canvas.add(rect);
+    });
+  
+    // Add button to save edited image
+    const saveButton = document.createElement('button');
+    saveButton.innerHTML = 'Save';
+    saveButton.style.position = 'absolute';
+    saveButton.style.bottom = '0px';
+    saveButton.style.left = '50%';
+    saveButton.style.transform = 'translateX(-50%)';
+    document.body.appendChild(saveButton);
+  
+    saveButton.addEventListener('click', async () => {
+      // Save edited image to filesystem and update photo data
+      const editedPhoto = await this.saveEditedPicture(canvas, photo);
+      const photoIndex = this.photos.findIndex((p) => p.filepath === photo.filepath);
+      this.photos[photoIndex] = editedPhoto;
+  
+      Preferences.set({
+        key: this.PHOTO_STORAGE,
+        value: JSON.stringify(this.photos),
+      });
+  
+      canvas.dispose();
+      saveButton.remove();
+    });
   }
+  
 
   private async saveEditedPicture(canvas: fabric.Canvas, photo: UserPhoto): Promise<UserPhoto> {
     const base64Data = canvas.toDataURL({ format: 'jpeg', quality: 1 });
