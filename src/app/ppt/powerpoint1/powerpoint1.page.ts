@@ -5,6 +5,7 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AlertController } from '@ionic/angular';
 import { Storage } from '@capacitor/storage';
+import { format } from 'date-fns';
 
 @Component({
   selector: 'app-powerpoint1',
@@ -45,16 +46,24 @@ export class Powerpoint1Page implements OnInit {
   }
 
 
-  newSlide() {
-    console.log('zzz')
+  async newSlide() {
+    this.registrationForm.reset();
+
+    // Clear photos array
+    await this.photoService.resetGallery();
+  
+    // Navigate back to template1 page
+    this.router.navigate(['/template1']);
   }
   createPresentation() {
     const pptx = new pptxgen();
 
+    
+  const currentDate = new Date();
+const dateString = format(currentDate, "MMMM d, yyyy");
     const slide = pptx.addSlide();
     
-    
-
+    // Add outlet name, code, channel, township, and team to the slide
     if (this.formData.outletName) {
       slide.addText(`OUTLET NAME: ${this.formData.outletName}`, { x: 0.5, y: 0.3, color: "093C99", bold: true, fontSize: 15 });
     }
@@ -63,7 +72,6 @@ export class Powerpoint1Page implements OnInit {
       slide.addText(`OUTLET CODE: ${this.formData.outletCode}`, { x: 0.5, y: 0.5, color: "093C99", bold: true, fontSize: 15 });
     }
     
-    // Add a slide with the channel, township, and team from the formData object
     if (this.formData.channel) {
       slide.addText(`CHANNEL: ${this.formData.channel}`, { x: 0.5, y: 0.7, color: "093C99", bold: true, fontSize: 15 });
     }
@@ -75,12 +83,22 @@ export class Powerpoint1Page implements OnInit {
     if (this.formData.team) {
       slide.addText(`TEAM: ${this.formData.team}`, { x: 0.5, y: 1.1, color: "093C99", bold: true, fontSize: 15 });
     }
-
+  
+    
+    // Add the first two photos to the slide
     const firstPhotoData = this.photos[0].webviewPath;
     const secondPhotoData = this.photos[1].webviewPath;
-slide.addImage({ data: firstPhotoData, x: 0.5, y: 1.5, w: 4, h: 3 });
-slide.addImage({ data: secondPhotoData, x: 5, y: 1.5, w: 4, h: 3 });
-    // 4. Save the Presentation
+    
+    slide.addImage({ data: firstPhotoData, x: 0.7, y: 1.3, w: 4, h: 3.5 });
+    slide.addImage({ data: secondPhotoData, x: 5, y: 1.3, w: 4.6, h: 3.5 });
+    slide.addText(dateString, { x: 0.5, y: 5.1, color: "093C99", bold: true, fontSize: 14 });
+
+    // Add current date to bottom left of slide
+    // const currentDate = new Date();
+    // const dateString = `${currentDate.toLocaleDateString()} ${currentDate.toLocaleTimeString()}`;
+    // slide.addText(dateString, { x: 0.5, y: 3.5, color: "093C99", bold: true, fontSize: 15 });
+    
+    // Save the presentation
     const now = new Date();
     const fileName = `${now.getFullYear()}-${(now.getMonth() + 1)
       .toString()
@@ -94,11 +112,11 @@ slide.addImage({ data: secondPhotoData, x: 5, y: 1.5, w: 4, h: 3 });
       .getMinutes()
       .toString()
       .padStart(2, "0")}.pptx`;
-
-      
-      const writeFileProps: pptxgen.WriteFileProps = {
-        fileName: fileName
-      };
-      pptx.writeFile(writeFileProps);
+    
+    const writeFileProps: pptxgen.WriteFileProps = {
+      fileName: fileName
+    };
+    pptx.writeFile(writeFileProps);
   }
+  
 }

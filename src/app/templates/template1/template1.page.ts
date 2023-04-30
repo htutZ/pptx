@@ -20,7 +20,6 @@ export class Template1Page implements OnInit {
 
   async ngOnInit() {
     await this.photoService.loadSaved();
-    this.photoService.editPicture(this.photoService.photos[0]);
 
   }
 
@@ -28,15 +27,7 @@ export class Template1Page implements OnInit {
     const actionSheet = await this.actionSheetController.create({
       header: 'Photos',
       buttons: [
-        
         {
-          text: 'Edit',
-          icon: 'create',
-          handler: () => {
-            // Handle the edit action
-            this.photoService.editPicture(photo);
-          }
-        },{
         text: 'Delete',
         role: 'destructive',
         icon: 'trash',

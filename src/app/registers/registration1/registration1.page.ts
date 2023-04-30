@@ -30,7 +30,6 @@ export class Registration1Page implements OnInit{
   ngOnInit() {
     this.photoService.loadSaved().then((photos: UserPhoto[]) => {
       this.photos = photos;
-      console.log("ddddd")
     });
   }
   
