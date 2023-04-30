@@ -90,8 +90,8 @@ const dateString = format(currentDate, "MMMM d, yyyy");
   
     
     // Add the first two photos to the slide
-    const firstPhotoData = this.photos[0].webviewPath;
-    const secondPhotoData = this.photos[1].webviewPath;
+    const firstPhotoData = this.photos[0].filepath;
+    const secondPhotoData = this.photos[1].filepath;
     
     slide.addImage({ data: firstPhotoData, x: 0.7, y: 1.3, w: 4, h: 3.5 });
     slide.addImage({ data: secondPhotoData, x: 5, y: 1.3, w: 4.6, h: 3.5 });
