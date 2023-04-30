@@ -55,6 +55,10 @@ export class Powerpoint1Page implements OnInit {
     // Navigate back to template1 page
     this.router.navigate(['/template1']);
   }
+
+  gobacktoTemplates(){
+    this.router.navigate(['/template-selection']);
+  }
   createPresentation() {
     const pptx = new pptxgen();
 

@@ -51,6 +51,25 @@ export class PhotoService {
     }
   }
 
+  public async addNewToGallery3Pics() {
+    if (this.photos.length < 3) {
+      const capturedPhoto = await Camera.getPhoto({
+        resultType: CameraResultType.Uri,
+        allowEditing: true,
+        source: CameraSource.Camera,
+        quality: 100
+      });
+
+      const savedImageFile = await this.savePicture(capturedPhoto);
+      this.photos.unshift(savedImageFile);
+
+      Preferences.set({
+        key: this.PHOTO_STORAGE,
+        value: JSON.stringify(this.photos)
+      });
+    }
+  }
+
   public async resetGallery() {
     this.photos = [];
   
@@ -73,6 +92,27 @@ export class PhotoService {
 
   public async takePicFromGallery() {
     if (this.photos.length < 2) {
+      const capturedPhoto = await Camera.getPhoto({
+        resultType: CameraResultType.Uri,
+        allowEditing: true,
+        source: Capacitor.isNative ? CameraSource.Camera : CameraSource.Photos,
+        quality: 100
+      });
+
+      const savedImageFile = await this.savePicture(capturedPhoto);
+      this.photos.unshift(savedImageFile);
+
+      Preferences.set({
+        key: this.PHOTO_STORAGE,
+        value: JSON.stringify(this.photos)
+      });
+
+
+    }
+  }
+
+  public async takePicFromGallery3Pics() {
+    if (this.photos.length < 3) {
       const capturedPhoto = await Camera.getPhoto({
         resultType: CameraResultType.Uri,
         allowEditing: true,

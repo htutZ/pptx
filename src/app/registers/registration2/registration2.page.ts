@@ -12,87 +12,41 @@ import { UserPhoto, PhotoService } from '../../services/photo.service';
 })
 export class Registration2Page implements OnInit {
 
-  registrationForm!: FormGroup;
-  images: any[] = [];
+  registrationForm: FormGroup;
+  public photos: UserPhoto[] = [];
 
   constructor(
     private formBuilder: FormBuilder,
     private router: Router,
-    public photoService: PhotoService,
-    private toastController: ToastController
-  ) {}
- ngOnInit() {
-    this.photoService.loadSaved();
-
+    public photoService: PhotoService
+  ) {
     this.registrationForm = this.formBuilder.group({
       outletName: ['', Validators.required],
       outletCode: ['', Validators.required],
       channel: ['', Validators.required],
       township: ['', Validators.required],
-      team: ['', Validators.required],
-      images: [null, Validators.required]
+      team: ['', Validators.required]
     });
   }
 
-  async onSubmit() {
-    if (this.registrationForm.invalid) {
-      return;
-    }
-
+  ngOnInit() {
+    this.photoService.loadSaved().then((photos: UserPhoto[]) => {
+      this.photos = photos;
+    });
+  }
+  
+  onSubmit() {
     // Save form data
     const formData = this.registrationForm.value;
-    await Storage.set({
+    console.log(
+      formData
+    )
+    Storage.set({
       key: 'formData',
       value: JSON.stringify(formData)
     });
 
-    // Navigate to submit page
-    this.router.navigateByUrl('/submit');
+    // Navigate to the second page
+    this.router.navigateByUrl('/confirmation2');
   }
-
-  onFileChange(event: any) {
-    if (event.target.files && event.target.files.length) {
-      const files = event.target.files;
-      for (let i = 0; i < files.length; i++) {
-        const reader = new FileReader();
-        reader.onload = (e: any) => {
-          this.images.push(e.target.result);
-          const imagesFormControl = this.registrationForm.get('images');
-          if (imagesFormControl) {
-            imagesFormControl.setValue(this.images);
-          }
-        };
-        reader.readAsDataURL(files[i]);
-      }
-    }
-  }
-  
-
-
-  async deleteImage(index: number) {
-    if (this.images && this.images.length > index) {
-      this.images.splice(index, 1);
-      if (this.registrationForm) {
-        const imagesControl = this.registrationForm.get('images');
-        if (imagesControl) {
-          imagesControl.setValue(this.images);
-        }
-      }
-      await Storage.set({
-        key: 'images',
-        value: JSON.stringify(this.images)
-      });
-      this.showToast('Image deleted successfully');
-    }
-  }
-  
-
-  async showToast(message: string) {
-    const toast = await this.toastController.create({
-      message,
-      duration: 2000
-    });
-    toast.present();
-  }
-
 }

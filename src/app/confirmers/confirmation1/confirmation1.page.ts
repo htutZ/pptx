@@ -1,7 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { Filesystem, FilesystemDirectory, FilesystemEncoding } from '@capacitor/filesystem';
 import { Router } from '@angular/router';
-import pptxgen from "pptxgenjs";
 import { Storage } from '@capacitor/storage';
 import { PhotoService, UserPhoto } from '../../services/photo.service';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';

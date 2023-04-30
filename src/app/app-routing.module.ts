@@ -39,6 +39,10 @@ const routes: Routes = [
     path: 'powerpoint1',
     loadChildren: () => import('./ppt/powerpoint1/powerpoint1.module').then( m => m.Powerpoint1PageModule)
   },
+  {
+    path: 'confirmation2',
+    loadChildren: () => import('./confirmers/confirmation2/confirmation2.module').then( m => m.Confirmation2PageModule)
+  },
 
 ];
 
