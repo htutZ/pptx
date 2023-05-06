@@ -6,6 +6,11 @@ import { Router } from '@angular/router';
 import { AlertController } from '@ionic/angular';
 import { Storage } from '@capacitor/storage';
 import { format } from 'date-fns';
+import { AndroidPermissions } from '@ionic-native/android-permissions/ngx';
+import { Capacitor, PermissionState } from '@capacitor/core';
+import { Filesystem } from '@capacitor/filesystem';
+
+
 
 @Component({
   selector: 'app-powerpoint1',
@@ -21,7 +26,8 @@ export class Powerpoint1Page implements OnInit {
     private formBuilder: FormBuilder,
     private router: Router,
     public photoService: PhotoService,
-    private alertController: AlertController
+    private alertController: AlertController,
+    private androidPermissions: AndroidPermissions 
   ) {
     this.registrationForm = this.formBuilder.group({
       outletName: ['', Validators.required],
@@ -45,6 +51,22 @@ export class Powerpoint1Page implements OnInit {
     });
   }
 
+async requestWriteExternalStoragePermission() {
+  if (Capacitor.isNativePlatform()) {
+    try {
+      const status = await Filesystem.requestPermissions();
+      if (status.publicStorage === 'granted') {
+        console.log('Permission granted: WRITE_EXTERNAL_STORAGE');
+      } else {
+        console.error('Permission not granted: WRITE_EXTERNAL_STORAGE');
+      }
+    } catch (error) {
+      console.error('Error requesting permission:', error);
+    }
+  } else {
+    console.log('Not a native platform, permission request not needed');
+  }
+}
 
   async newSlide() {
     this.registrationForm.reset();
@@ -59,10 +81,15 @@ export class Powerpoint1Page implements OnInit {
   gobacktoTemplates(){
     this.router.navigate(['/template-selection']);
   }
-  createPresentation() {
+
+  async createPresentation() {
+    try {
+
+    this.requestWriteExternalStoragePermission();
+
     const pptx = new pptxgen();
 
-    
+    console.log('the function works')
   const currentDate = new Date();
 const dateString = format(currentDate, "MMMM d, yyyy");
     const slide = pptx.addSlide();
@@ -90,19 +117,15 @@ const dateString = format(currentDate, "MMMM d, yyyy");
   
     
     // Add the first two photos to the slide
-    const firstPhotoData = this.photos[0].filepath;
-    const secondPhotoData = this.photos[1].filepath;
+    if (this.photos[0]?.webviewPath && this.photos[1]?.webviewPath) {
+      const firstPhotoData = Capacitor.convertFileSrc(this.photos[0].webviewPath) || '';
+      const secondPhotoData = Capacitor.convertFileSrc(this.photos[1].webviewPath) || '';
     
-    slide.addImage({ data: firstPhotoData, x: 0.7, y: 1.3, w: 4, h: 3.5 });
-    slide.addImage({ data: secondPhotoData, x: 5, y: 1.3, w: 4.6, h: 3.5 });
+      slide.addImage({ data: firstPhotoData, x: 0.7, y: 1.3, w: 4, h: 3.5 });
+      slide.addImage({ data: secondPhotoData, x: 5, y: 1.3, w: 4.6, h: 3.5 });
+    }
     slide.addText(dateString, { x: 0.5, y: 5.1, color: "093C99", bold: true, fontSize: 14 });
 
-    // Add current date to bottom left of slide
-    // const currentDate = new Date();
-    // const dateString = `${currentDate.toLocaleDateString()} ${currentDate.toLocaleTimeString()}`;
-    // slide.addText(dateString, { x: 0.5, y: 3.5, color: "093C99", bold: true, fontSize: 15 });
-    
-    // Save the presentation
     const now = new Date();
     const fileName = `${now.getFullYear()}-${(now.getMonth() + 1)
       .toString()
@@ -117,10 +140,18 @@ const dateString = format(currentDate, "MMMM d, yyyy");
       .toString()
       .padStart(2, "0")}.pptx`;
     
-    const writeFileProps: pptxgen.WriteFileProps = {
-      fileName: fileName
-    };
-    pptx.writeFile(writeFileProps);
+      pptx.writeFile({ fileName: fileName })
+      .then(() => {
+        console.log('Presentation saved successfully.');
+        alert('Presentation was created successfully.');
+      })
+      .catch((err) => {
+        console.error('Error: Presentation was not created:', err);
+        alert('Error: Presentation was not created.');
+      });
+    
+  } catch (err) {
+    console.error("Error creating presentation: ", err);
   }
-  
+}
 }
