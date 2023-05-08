@@ -7,10 +7,8 @@ import { AlertController } from '@ionic/angular';
 import { Storage } from '@capacitor/storage';
 import { format } from 'date-fns';
 import { AndroidPermissions } from '@ionic-native/android-permissions/ngx';
-import { Capacitor, PermissionState } from '@capacitor/core';
-import { Filesystem } from '@capacitor/filesystem';
-
-
+import { Capacitor, PermissionState, Plugins } from '@capacitor/core';
+import { Filesystem, Directory } from '@capacitor/filesystem';
 
 @Component({
   selector: 'app-powerpoint1',
@@ -140,8 +138,41 @@ const dateString = format(currentDate, "MMMM d, yyyy");
       .toString()
       .padStart(2, "0")}.pptx`;
     
-      pptx.writeFile({ fileName: fileName })
-      .then(() => {
+      pptx.write("base64")
+      .then(async (base64Data) => {
+        // Add the proper prefix for a PowerPoint base64 string
+        const blob = `data:application/vnd.openxmlformats-officedocument.presentationml.presentation;base64,${base64Data}`;
+        let fileUri;
+        
+        try {
+          // Create a new folder named "powerpoints" inside the Documents directory
+          const newFolder = 'powerpoints';
+          await Filesystem.mkdir({
+            path: newFolder,
+            directory: Directory.Documents,
+            recursive: false, // Set to true if you want to create nested directories
+          });
+        
+          // Save the Blob in the "powerpoints" folder
+          const result = await Filesystem.writeFile({
+            path: `${newFolder}/${fileName}`,
+            data: blob,
+            directory: Directory.Documents,
+          });
+        
+          // Get the file path of the saved presentation
+          const fileUri = await Filesystem.getUri({
+            path: `${newFolder}/${fileName}`,
+            directory: Directory.Documents,
+          });
+        
+          console.log('Presentation saved successfully.');
+          alert(`Presentation was created successfully. File saved at: ${fileUri.uri}`);
+        } catch (err) {
+          console.error('Error: Presentation was not created:', err);
+          alert('Saving file does not complete.');
+        }
+
         console.log('Presentation saved successfully.');
         alert('Presentation was created successfully.');
       })
@@ -149,6 +180,10 @@ const dateString = format(currentDate, "MMMM d, yyyy");
         console.error('Error: Presentation was not created:', err);
         alert('Error: Presentation was not created.');
       });
+    
+
+        console.log('Presentation saved successfully.');
+      
     
   } catch (err) {
     console.error("Error creating presentation: ", err);
