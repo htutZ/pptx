@@ -192,14 +192,14 @@ async requestWriteExternalStoragePermission() {
       slide.addText(dateString, { x: 0.5, y: 5.1, color: "093C99", bold: true, fontSize: 14 });
   }
 
-  // this.photoService.logos
-  // .filter(logo => logo.selected)
-  // .forEach(async (logo, index) => {
-  //   if (logo.filepath) {
-  //     const logoData = await this.photoService.getBase64Image(logo.filepath);
-  //     slide.addImage({ data: logoData, x: 0.7 + index*4.3, y: 1.3, w: 4, h: 3.5 });
-  //   }
-  // });
+  const selectedLogos = this.photoService.logos.filter(logo => logo.selected);
+  for (let [index, logo] of selectedLogos.entries()) {
+    if (logo.filepath) {
+      const logoData = await this.photoService.getBase64FromPath(logo.filepath);
+      console.log(logoData)
+      slide.addImage({ data: logoData, x: 0.7 + index*4.3, y: 1.3, w: 4, h: 3.5 });
+    }
+  }
 
     const now = new Date();
     const fileName = await this.getFileName();

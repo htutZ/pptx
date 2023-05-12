@@ -36,6 +36,10 @@ export class PhotoService {
 
   public async loadSavedLogos() {
     this.logos = await this.getSavedLogos();
+  
+    for (let logo of this.logos) {
+      logo.selected = false; 
+    }
   }
 
   public async saveLogo(image: UserPhoto) {
@@ -51,31 +55,40 @@ export class PhotoService {
   public async getSavedLogos(): Promise<UserPhoto[]> {
     const storedLogos = await Preferences.get({ key: this.LOGO_STORAGE });
     const logos = JSON.parse(storedLogos.value || '[]');
-
+  
     for (let logo of logos) {
       const readFile = await Filesystem.readFile({
         path: logo.filepath,
         directory: Directory.Data
       });
       logo.webviewPath = `data:image/jpeg;base64,${readFile.data}`;
+      logo.selected = false;  // Set selected property to false
     }
-
+  
     return logos;
   }
 
-  public async addNewLogoToGallery() {
-    if (this.logos.length < 2) {
-      const capturedLogo = await Camera.getPhoto({
-        resultType: CameraResultType.Uri,
-        allowEditing: true,
-        source: CameraSource.Camera,
-        quality: 100
-      });
+public async addNewLogoToGallery() {
+  if (this.logos.length < 2) {
+    const capturedLogo = await Camera.getPhoto({
+      resultType: CameraResultType.Uri,
+      allowEditing: true,
+      source: CameraSource.Photos,
+      quality: 100
+    });
 
-      const savedImageFile = await this.savePicture(capturedLogo);
-      this.saveLogo(savedImageFile);
+    const savedImageFile = await this.savePicture(capturedLogo);
+
+    const userPhoto: UserPhoto = {
+      filepath: savedImageFile.filepath,
+      webviewPath: savedImageFile.webviewPath,
+      selected: false // Set selected property to false
     }
+
+    this.saveLogo(userPhoto);
   }
+}
+
 
   public async addNewToGallery() {
     if (this.photos.length < 2) {
@@ -205,6 +218,15 @@ export class PhotoService {
       filepath: fileName,
       webviewPath: photo.webPath
     };
+  }
+
+  public async getBase64FromPath(filepath: string): Promise<string> {
+    const readFile = await Filesystem.readFile({
+      path: filepath,
+      directory: Directory.Data
+    });
+  
+    return `data:image/jpeg;base64,${readFile.data}`;
   }
 
   private async readAsBase64(photo: Photo) {
