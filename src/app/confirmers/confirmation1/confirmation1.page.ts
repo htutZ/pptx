@@ -11,6 +11,15 @@ import { AlertController } from '@ionic/angular';
   styleUrls: ['./confirmation1.page.scss'],
 })
 export class Confirmation1Page implements OnInit {
+
+  editStates = {
+    outletName: false,
+    outletCode: false,
+    channel: false,
+    township: false,
+    team: false
+};
+
   registrationForm: FormGroup;
   formData: any;
   public photos: UserPhoto[] = [];
@@ -38,9 +47,18 @@ export class Confirmation1Page implements OnInit {
     Storage.get({ key: 'formData' }).then((result) => {
       if (result.value) {
         this.formData = JSON.parse(result.value);
+        this.registrationForm.patchValue(this.formData);
         console.log(this.formData);
       }
     });
+
+    this.registrationForm.valueChanges.subscribe(newData => {
+      Storage.set({
+        key: 'formData',
+        value: JSON.stringify(newData)
+      });
+    });
+  
   }
 
   async confirmRegistration() {

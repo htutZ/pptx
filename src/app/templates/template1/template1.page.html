@@ -1,5 +1,5 @@
 <ion-header>
-  <ion-toolbar>
+  <ion-toolbar color="primary">
     <ion-title>
       Template 1
     </ion-title>
@@ -7,33 +7,54 @@
 </ion-header>
 
 <ion-content>
+
   <ion-header collapse="condense">
-    <ion-toolbar>
+    <ion-toolbar color="primary">
       <ion-title size="large">Template 1</ion-title>
     </ion-toolbar>
   </ion-header>
 
   <ion-grid>
-    <ion-row>
-    <ion-col size="6" *ngFor="let photo of photoService.photos; index as position">
-      <ion-img [src]="photo.webviewPath" (click)="showActionSheet(photo, position)"></ion-img>
-    </ion-col>
+    <ion-row class="scroll-container">
+      <ion-col size="6" *ngFor="let photo of photoService.photos; index as position">
+        <ion-img [src]="photo.webviewPath" (click)="showActionSheet(photo, position)"></ion-img>
+      </ion-col>
     </ion-row>
   </ion-grid>
 
-  <ion-col>
-    <ion-button color="primary" (click)="photoService.addNewToGallery()">
-      <ion-icon name="camera"></ion-icon>
-      Take Photo
-    </ion-button>
-  </ion-col>
-  <ion-col>
-    <ion-button color="primary" (click)="photoService.takePicFromGallery()">
-      <ion-icon name="images"></ion-icon>
-      Select from Gallery
-    </ion-button>
-  </ion-col>
+  <ion-row>
+    <ion-col>
+      <ion-button expand="full" color="primary" (click)="photoService.addNewToGallery()">
+        <ion-icon slot="start" name="camera"></ion-icon>
+        Take Photo
+      </ion-button>
+    </ion-col>
+    <ion-col>
+      <ion-button expand="full" color="primary" (click)="photoService.takePicFromGallery()">
+        <ion-icon slot="start" name="images"></ion-icon>
+        Select from Gallery
+      </ion-button>
+    </ion-col>
+  </ion-row>
 
-    <ion-button vertical="bottom" horizontal="center" expand="block" (click)="submit()">Submit</ion-button>
-  
+  <ion-grid>
+    <ion-row class="scroll-container">
+      <ion-col size="6" *ngFor="let logo of photoService.logos; index as position">
+        <ion-img [src]="logo.webviewPath"></ion-img>
+      </ion-col>
+    </ion-row>
+  </ion-grid>
+
+  <ion-row>
+    <ion-col>
+      <ion-button expand="full" color="primary" (click)="photoService.addNewLogoToGallery()" 
+                  [disabled]="photoService.logos.length >= 2">
+        <ion-icon slot="start" name="camera"></ion-icon>
+        Upload Logo
+      </ion-button>
+    </ion-col>
+  </ion-row>
+
+  <ion-button vertical="bottom" horizontal="center" expand="block" color="primary" (click)="submit()">Submit</ion-button>
+
 </ion-content>

@@ -12,7 +12,9 @@ import { fabric } from 'fabric';
 export class PhotoService {
 
   private PHOTO_STORAGE = 'photos';
+  private LOGO_STORAGE = 'logos';
   public photos: UserPhoto[] = [];
+  public logos: UserPhoto[] = [];
 
   constructor() {}
 
@@ -30,6 +32,49 @@ export class PhotoService {
     }
 
     return this.photos;
+  }
+
+  public async loadSavedLogos() {
+    this.logos = await this.getSavedLogos();
+  }
+
+  public async saveLogo(image: UserPhoto) {
+    if (this.logos.length < 2) {
+      this.logos.push(image);
+      await Preferences.set({
+        key: this.LOGO_STORAGE,
+        value: JSON.stringify(this.logos)
+      });
+    }
+  }
+
+  public async getSavedLogos(): Promise<UserPhoto[]> {
+    const storedLogos = await Preferences.get({ key: this.LOGO_STORAGE });
+    const logos = JSON.parse(storedLogos.value || '[]');
+
+    for (let logo of logos) {
+      const readFile = await Filesystem.readFile({
+        path: logo.filepath,
+        directory: Directory.Data
+      });
+      logo.webviewPath = `data:image/jpeg;base64,${readFile.data}`;
+    }
+
+    return logos;
+  }
+
+  public async addNewLogoToGallery() {
+    if (this.logos.length < 2) {
+      const capturedLogo = await Camera.getPhoto({
+        resultType: CameraResultType.Uri,
+        allowEditing: true,
+        source: CameraSource.Camera,
+        quality: 100
+      });
+
+      const savedImageFile = await this.savePicture(capturedLogo);
+      this.saveLogo(savedImageFile);
+    }
   }
 
   public async addNewToGallery() {
@@ -95,7 +140,7 @@ export class PhotoService {
       const capturedPhoto = await Camera.getPhoto({
         resultType: CameraResultType.Uri,
         allowEditing: true,
-        source: Capacitor.isNative ? CameraSource.Camera : CameraSource.Photos,
+        source: CameraSource.Photos,
         quality: 100
       });
 
@@ -116,7 +161,7 @@ export class PhotoService {
       const capturedPhoto = await Camera.getPhoto({
         resultType: CameraResultType.Uri,
         allowEditing: true,
-        source: Capacitor.isNative ? CameraSource.Camera : CameraSource.Photos,
+        source: CameraSource.Photos,
         quality: 100
       });
 
@@ -202,4 +247,5 @@ export class PhotoService {
 export interface UserPhoto {
   filepath: string;
   webviewPath?: string;
+  selected?: boolean;
 }

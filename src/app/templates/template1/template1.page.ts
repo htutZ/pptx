@@ -46,6 +46,7 @@ export class Template1Page implements OnInit {
     await actionSheet.present();
   }
 
+
   async showAlert(header: string, message: string) {
     const alert = await this.alertController.create({
       header,

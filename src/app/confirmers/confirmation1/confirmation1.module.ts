@@ -5,7 +5,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
 
 import { Confirmation1PageRoutingModule } from './confirmation1-routing.module';
-
+import { FileOpener } from '@ionic-native/file-opener/ngx';
 import { Confirmation1Page } from './confirmation1.page';
 
 @NgModule({
@@ -15,6 +15,9 @@ import { Confirmation1Page } from './confirmation1.page';
     ReactiveFormsModule,
     IonicModule,
     Confirmation1PageRoutingModule
+  ],
+  providers: [
+    FileOpener,
   ],
   declarations: [Confirmation1Page]
 })

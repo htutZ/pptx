@@ -5,7 +5,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
 
 import { Powerpoint1PageRoutingModule } from './powerpoint1-routing.module';
-
+import { FileOpener } from '@ionic-native/file-opener/ngx';
 import { Powerpoint1Page } from './powerpoint1.page';
 
 @NgModule({
@@ -15,6 +15,9 @@ import { Powerpoint1Page } from './powerpoint1.page';
     ReactiveFormsModule,
     IonicModule,
     Powerpoint1PageRoutingModule
+  ],
+  providers: [
+    FileOpener,
   ],
   declarations: [Powerpoint1Page]
 })

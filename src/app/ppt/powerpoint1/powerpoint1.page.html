@@ -1,11 +1,42 @@
 <ion-header>
-  <ion-toolbar>
-    <ion-title>powerpoint1</ion-title>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/" text="" color="light"></ion-back-button>
+    </ion-buttons>
+    <ion-title>PowerPoint</ion-title>
   </ion-toolbar>
 </ion-header>
 
 <ion-content>
-  <ion-button (click)="newSlide()">New Slide</ion-button>
-  <ion-button (click)="createPresentation()">Save</ion-button>
-  <ion-button (click)="gobacktoTemplates()">Go Back To Templates Selection</ion-button>
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>Upload Logos</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-row>
+        <ion-col size="6" *ngFor="let logo of photoService.logos; index as position">
+          <ion-img [src]="logo.webviewPath"></ion-img>
+          <input type="checkbox" [(ngModel)]="logo.selected">
+        </ion-col>
+      </ion-row>
+    </ion-card-content>
+  </ion-card>
+
+  <ion-card>
+    <ion-card-content>
+      <ion-button expand="full" color="primary" (click)="newSlide()">New Slide</ion-button>
+    </ion-card-content>
+  </ion-card>
+
+  <ion-card>
+    <ion-card-content>
+      <ion-button expand="full" color="success" (click)="askToAddDate()">Save</ion-button>
+    </ion-card-content>
+  </ion-card>
+
+  <ion-card>
+    <ion-card-content>
+      <ion-button expand="full" color="medium" (click)="gobacktoTemplates()">Go Back To Templates Selection</ion-button>
+    </ion-card-content>
+  </ion-card>
 </ion-content>
