@@ -99,23 +99,50 @@ async requestWriteExternalStoragePermission() {
   }
 
   async askToAddDate() {
-    const currentDate = new Date();
-    const dateString = format(currentDate, "MMMM d, yyyy");
-
     const alert = await this.alertController.create({
       header: 'Add Date',
-      message: `<img src="../../assets/example.jpg" alt="Date example" width="100%"><br>Would you like to add the current date (${dateString}) at the left side bottom of the PowerPoint?`,
+      message: `<img src="../../assets/example.jpg" alt="Date example" width="100%"><br>Would you like to add a date at the left side bottom of the PowerPoint?`,
       buttons: [
         {
           text: 'No',
           role: 'cancel',
           handler: () => {
-              this.createPresentation();
+            this.createPresentation();
           }
         }, {
           text: 'Yes',
-          handler: () => {
-            this.createPresentation(true);
+          handler: async () => {
+            const customDateAlert = await this.alertController.create({
+              header: 'Enter Date',
+              inputs: [
+                {
+                  name: 'customDate',
+                  type: 'date',
+                  placeholder: 'Custom Date'
+                }
+              ],
+              buttons: [
+                {
+                  text: 'Cancel',
+                  role: 'cancel',
+                  handler: () => {
+                    this.createPresentation();
+                  }
+                }, {
+                  text: 'Add',
+                  handler: (data) => {
+                    if (data.customDate) {
+                      const customDate = new Date(data.customDate);
+                      this.createPresentation(true, customDate);
+                    } else {
+                      this.createPresentation();
+                    }
+                  }
+                }
+              ]
+            });
+  
+            await customDateAlert.present();
           }
         }
       ]
@@ -123,6 +150,7 @@ async requestWriteExternalStoragePermission() {
   
     await alert.present();
   }
+  
 
   async getFileName(): Promise<string> {
     return new Promise<string>((resolve) => {
@@ -154,7 +182,7 @@ async requestWriteExternalStoragePermission() {
     });
   }
 
-  async createPresentation(includeDate: boolean = false) {
+  async createPresentation(includeDate: boolean = false, date: Date | undefined = undefined) {
 
     try {
 
@@ -163,9 +191,9 @@ async requestWriteExternalStoragePermission() {
     const pptx = new pptxgen();
 
   const currentDate = new Date();
-   const dateString = format(currentDate, "MMMM d, yyyy");
     const slide = pptx.addSlide();
     
+    const dateString = date ? format(date, "MMMM d, yyyy") : "";
 
     const contentQueue = [
       {label: 'OUTLET NAME', value: this.formData.outletName},
@@ -179,7 +207,6 @@ async requestWriteExternalStoragePermission() {
       slide.addText(`${item.label}: ${item.value}`, { x: 0.5, y: 0.3 + index*0.2, color: "093C99", bold: true, fontSize: 15 });
   });
     
-    // Add the first two photos to the slide
     if (this.photos[0]?.webviewPath && this.photos[1]?.webviewPath) {
       const firstPhotoData = Capacitor.convertFileSrc(this.photos[0].webviewPath) || '';
       const secondPhotoData = Capacitor.convertFileSrc(this.photos[1].webviewPath) || '';
@@ -188,7 +215,7 @@ async requestWriteExternalStoragePermission() {
       slide.addImage({ data: secondPhotoData, x: 5, y: 1.3, w: 4.6, h: 3.5 });
     }
     
-    if (includeDate) {
+    if (includeDate && dateString) {
       slide.addText(dateString, { x: 0.5, y: 5.1, color: "093C99", bold: true, fontSize: 14 });
   }
 
@@ -196,10 +223,19 @@ async requestWriteExternalStoragePermission() {
   for (let [index, logo] of selectedLogos.entries()) {
     if (logo.filepath) {
       const logoData = await this.photoService.getBase64FromPath(logo.filepath);
-      console.log(logoData)
-      slide.addImage({ data: logoData, x: 0.7 + index*4.3, y: 1.3, w: 4, h: 3.5 });
+      console.log(logoData);
+      
+      const logoPositions = [
+        { x: 8.3, y: 0.35, w: 1.3, h: 0.5 },
+        { x: 8.3, y: 4.9, w: 1.3, h: 0.5 }
+      ];
+  
+      if (index < logoPositions.length) {
+        const { x, y, w, h } = logoPositions[index];
+        slide.addImage({ data: logoData, x, y, w, h });
+      }
     }
-  }
+  }  
 
     const now = new Date();
     const fileName = await this.getFileName();
@@ -216,12 +252,11 @@ async requestWriteExternalStoragePermission() {
     
       pptx.write("base64")
       .then(async (base64Data) => {
-        // Add the proper prefix for a PowerPoint base64 string
         const blob = `data:application/vnd.openxmlformats-officedocument.presentationml.presentation;base64,${base64Data}`;
         
         try {
         await loading.present();
-          // Create a new folder named "powerpoints" inside the Documents directory
+ 
           const newFolder = 'powerpoints';
           const entries = await Filesystem.readdir({
             path: '',
@@ -233,18 +268,16 @@ async requestWriteExternalStoragePermission() {
             await Filesystem.mkdir({
               path: newFolder,
               directory: Directory.Documents,
-              recursive: true, // Set to true if you want to create nested directories
+              recursive: true, 
             });
           }
         
-          // Save the Blob in the "powerpoints" folder
           const result = await Filesystem.writeFile({
             path: `${newFolder}/${fullFileName}`,
             data: blob,
             directory: Directory.Documents,
           });
         
-          // Get the file path of the saved presentation
           const fileUri = await Filesystem.getUri({
             path: `${newFolder}/${fullFileName}`,
             directory: Directory.Documents,
@@ -265,7 +298,7 @@ async requestWriteExternalStoragePermission() {
               {
                 text: 'Confirm',
                 handler: () => {
-                  this.openFileLocation(fileUri.uri); // <-- Modify this line
+                  this.openFileLocation(fileUri.uri); 
                 },
               },
               {
