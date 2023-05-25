@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { PhotoService, UserPhoto } from '../../services/photo.service';
+import { PhotoService, UserPhoto, Slide,Logo } from '../../services/photo.service';
 import pptxgen from "pptxgenjs";
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -8,9 +8,12 @@ import { Storage } from '@capacitor/storage';
 import { format } from 'date-fns';
 import { AndroidPermissions } from '@ionic-native/android-permissions/ngx';
 import { Capacitor, PermissionState, Plugins } from '@capacitor/core';
-import { Filesystem, Directory } from '@capacitor/filesystem';
+import { Filesystem, Directory, FilesystemDirectory, FilesystemEncoding } from '@capacitor/filesystem';
 import { FileOpener } from '@ionic-native/file-opener/ngx'; 
 import { LoadingController } from '@ionic/angular';
+import { TemplateService } from 'src/app/services/template.service';
+import { CapacitorSQLite, SQLiteDBConnection } from '@capacitor-community/sqlite';
+import { SQLiteService } from '../../services/sqlite.service';
 
 @Component({
   selector: 'app-powerpoint1',
@@ -18,10 +21,16 @@ import { LoadingController } from '@ionic/angular';
   styleUrls: ['./powerpoint1.page.scss'],
 })
 export class Powerpoint1Page implements OnInit {
+
+  db!: SQLiteDBConnection;
+  dbName: string = 'pptx';
   registrationForm: FormGroup;
   formData: any;
   public photos: UserPhoto[] = [];
-  
+  public slides: Slide[] = [];
+  logos: UserPhoto[] = []; 
+  private slideCounter = 0;
+
   constructor(
     private formBuilder: FormBuilder,
     private router: Router,
@@ -29,8 +38,11 @@ export class Powerpoint1Page implements OnInit {
     private alertController: AlertController,
     private androidPermissions: AndroidPermissions,
     private fileOpener: FileOpener,
-    private loadingController: LoadingController
+    private loadingController: LoadingController,
+    private templateService: TemplateService,
+    private sqlite: SQLiteService,
   ) {
+    
     this.registrationForm = this.formBuilder.group({
       outletName: ['', Validators.required],
       outletCode: ['', Validators.required],
@@ -38,12 +50,15 @@ export class Powerpoint1Page implements OnInit {
       township: ['', Validators.required],
       team: ['', Validators.required]
     });
+    
   }
 
   ngOnInit() {
-    this.photoService.loadSaved().then((photos: UserPhoto[]) => {
-      this.photos = photos;
-      console.log(photos);
+    this.photoService.loadSaved().then((result: {photos: UserPhoto[], logos: UserPhoto[]}) => {
+      this.photos = result.photos;
+      this.logos = result.logos;
+      console.log(result.photos);
+      console.log(result.logos);
     });
     Storage.get({ key: 'formData' }).then((result) => {
       if (result.value) {
@@ -52,6 +67,7 @@ export class Powerpoint1Page implements OnInit {
       }
     });
   }
+  
 
 async requestWriteExternalStoragePermission() {
   if (Capacitor.isNativePlatform()) {
@@ -107,7 +123,7 @@ async requestWriteExternalStoragePermission() {
           text: 'No',
           role: 'cancel',
           handler: () => {
-            this.createPresentation();
+            this.saveSlide();
           }
         }, {
           text: 'Yes',
@@ -126,16 +142,16 @@ async requestWriteExternalStoragePermission() {
                   text: 'Cancel',
                   role: 'cancel',
                   handler: () => {
-                    this.createPresentation();
+                    this.saveSlide();
                   }
                 }, {
                   text: 'Add',
                   handler: (data) => {
                     if (data.customDate) {
                       const customDate = new Date(data.customDate);
-                      this.createPresentation(true, customDate);
+                      this.saveSlide(true, customDate);
                     } else {
-                      this.createPresentation();
+                      this.saveSlide();
                     }
                   }
                 }
@@ -182,62 +198,137 @@ async requestWriteExternalStoragePermission() {
     });
   }
 
+
+   async saveSlide(includeDate: boolean = false, date: Date | undefined = undefined) {
+
+    await this.requestWriteExternalStoragePermission();
+
+    const templateType = this.templateService.templateType;
+    if (!templateType) {
+      // handle the case where templateType is null
+      console.error("No template selected");
+      return;
+    }
+    const dateString = date ? format(date, "MMMM d, yyyy") : "";
+  
+    const logoPositions = [
+      { x: 8.3, y: 0.35, w: 1.3, h: 0.5 },
+      { x: 8.3, y: 4.9, w: 1.3, h: 0.5 }
+    ];
+  
+    // Get selected logos from photoService
+    const selectedLogos: UserPhoto[] = this.photoService.logos.filter(logo => logo.selected);
+  
+    // Convert UserPhoto[] to Logo[]
+    const logos: Logo[] = selectedLogos.map((logo, index) => {
+      return {
+        filepath: logo.filepath,
+        logoData: logo.webviewPath || '', // if webviewPath is undefined, use an empty string
+        position: logoPositions[index % logoPositions.length]
+      };
+    });
+  
+    const newSlide: Slide = {
+      formData: this.formData,
+      photos: this.photos,
+      logos: logos,
+      templateType: templateType,
+      dateString: dateString
+    };
+  
+  try {
+    await this.requestWriteExternalStoragePermission();
+    const timestamp = new Date().getTime();
+     const fileName = `slide${timestamp}.json`;
+
+    await Filesystem.writeFile({
+      path: fileName,
+      data: JSON.stringify(newSlide),
+      directory: Directory.Data,
+      encoding: FilesystemEncoding.UTF8,
+    });
+
+    console.log('Slide saved successfully');
+  } catch (error) {
+    console.error('Could not save slide', error);
+  } finally {
+    console.log(newSlide);
+    this.formData = {};
+    this.photos = [];
+  }
+
+  }  
+
   async createPresentation(includeDate: boolean = false, date: Date | undefined = undefined) {
-
-    try {
-
-   await this.requestWriteExternalStoragePermission();
+  try {
+    await this.requestWriteExternalStoragePermission();
 
     const pptx = new pptxgen();
 
-  const currentDate = new Date();
-    const slide = pptx.addSlide();
-    
-    const dateString = date ? format(date, "MMMM d, yyyy") : "";
-
-    const contentQueue = [
-      {label: 'OUTLET NAME', value: this.formData.outletName},
-      {label: 'OUTLET CODE', value: this.formData.outletCode},
-      {label: 'CHANNEL', value: this.formData.channel},
-      {label: 'TOWNSHIP', value: this.formData.township},
-      {label: 'TEAM', value: this.formData.team},
-  ].filter(item => item.value);
-  
-    contentQueue.forEach((item, index) => {
-      slide.addText(`${item.label}: ${item.value}`, { x: 0.5, y: 0.3 + index*0.2, color: "093C99", bold: true, fontSize: 15 });
-  });
-    
-    if (this.photos[0]?.webviewPath && this.photos[1]?.webviewPath) {
-      const firstPhotoData = Capacitor.convertFileSrc(this.photos[0].webviewPath) || '';
-      const secondPhotoData = Capacitor.convertFileSrc(this.photos[1].webviewPath) || '';
-    
-      slide.addImage({ data: firstPhotoData, x: 0.7, y: 1.3, w: 4, h: 3.5 });
-      slide.addImage({ data: secondPhotoData, x: 5, y: 1.3, w: 4.6, h: 3.5 });
-    }
-    
-    if (includeDate && dateString) {
-      slide.addText(dateString, { x: 0.5, y: 5.1, color: "093C99", bold: true, fontSize: 14 });
-  }
-
-  const selectedLogos = this.photoService.logos.filter(logo => logo.selected);
-  for (let [index, logo] of selectedLogos.entries()) {
-    if (logo.filepath) {
-      const logoData = await this.photoService.getBase64FromPath(logo.filepath);
-      console.log(logoData);
+    const directoryContents = await Filesystem.readdir({
+      path: '',
+      directory: Directory.Data
+    });
       
-      const logoPositions = [
-        { x: 8.3, y: 0.35, w: 1.3, h: 0.5 },
-        { x: 8.3, y: 4.9, w: 1.3, h: 0.5 }
-      ];
-  
-      if (index < logoPositions.length) {
-        const { x, y, w, h } = logoPositions[index];
-        slide.addImage({ data: logoData, x, y, w, h });
+    const slideFileNames = directoryContents.files
+      .filter(fileInfo => fileInfo.name.startsWith('slide'))
+      .map(fileInfo => fileInfo.name)
+      .sort((a, b) => {
+        // Extract timestamps from the filename and sort based on them
+        const timestampA = Number(a.replace('slide', '').replace('.json', ''));
+        const timestampB = Number(b.replace('slide', '').replace('.json', ''));
+        return timestampA - timestampB;
+      });
+
+    for (let filename of slideFileNames) {
+      const jsonData = await Filesystem.readFile({
+        path: filename,
+        directory: Directory.Data,
+        encoding: FilesystemEncoding.UTF8
+      });
+      const slideData = JSON.parse(jsonData.data) as Slide;
+
+      // Add slides...
+      const slide = pptx.addSlide();
+
+      const contentQueue = [
+        { label: 'OUTLET NAME', value: slideData.formData.outletName },
+        { label: 'OUTLET CODE', value: slideData.formData.outletCode },
+        { label: 'CHANNEL', value: slideData.formData.channel },
+        { label: 'TOWNSHIP', value: slideData.formData.township },
+        { label: 'TEAM', value: slideData.formData.team },
+      ].filter(item => item.value);
+
+      contentQueue.forEach((item, index) => {
+        slide.addText(`${item.label}: ${item.value}`, {
+          x: 0.5,
+          y: 0.3 + index * 0.2,
+          color: "093C99",
+          bold: true,
+          fontSize: 15
+        });
+      });
+
+      // Add images based on the template type
+      for (let i = 0; i < slideData.photos.length; i++) {
+        if (slideData.photos[i]) {
+          const webviewPath = slideData.photos[i].webviewPath;
+          const photoData = webviewPath ? Capacitor.convertFileSrc(webviewPath) : '';
+          slide.addImage({ data: photoData, x: (i % 2) * 4.3 + 0.7, y: Math.floor(i / 2) * 1.8 + 1.3, w: 4, h: 3.5 });
+        }
+      }
+
+      // Add logos
+      for (let logo of slideData.logos) {
+        const { x, y, w, h } = logo.position;
+        slide.addImage({ data: logo.logoData, x, y, w, h });
+      }
+
+      if (slideData.dateString) {
+        slide.addText(slideData.dateString, { x: 0.5, y: 5.1, color: "093C99", bold: true, fontSize: 14 });
       }
     }
-  }  
 
-    const now = new Date();
     const fileName = await this.getFileName();
 
     if (fileName === '') {
@@ -249,77 +340,84 @@ async requestWriteExternalStoragePermission() {
     });
 
     const fullFileName = `${fileName}.pptx`;
-    
-      pptx.write("base64")
-      .then(async (base64Data) => {
-        const blob = `data:application/vnd.openxmlformats-officedocument.presentationml.presentation;base64,${base64Data}`;
-        
-        try {
-        await loading.present();
- 
-          const newFolder = 'powerpoints';
-          const entries = await Filesystem.readdir({
-            path: '',
+    pptx.write("base64")
+    .then(async (base64Data) => {
+      const blob = `data:application/vnd.openxmlformats-officedocument.presentationml.presentation;base64,${base64Data}`;
+      
+      try {
+      await loading.present();
+
+        const newFolder = 'powerpoints';
+        const entries = await Filesystem.readdir({
+          path: '',
+          directory: Directory.Documents,
+        });
+        const directoryExists = entries.files.some((entry) => entry.name === newFolder);
+      
+           if (!directoryExists) {
+          await Filesystem.mkdir({
+            path: newFolder,
             directory: Directory.Documents,
+            recursive: true, 
           });
-          const directoryExists = entries.files.some((entry) => entry.name === newFolder);          
-          
-          if (!directoryExists) {
-            await Filesystem.mkdir({
-              path: newFolder,
-              directory: Directory.Documents,
-              recursive: true, 
-            });
-          }
-        
-          const result = await Filesystem.writeFile({
-            path: `${newFolder}/${fullFileName}`,
-            data: blob,
-            directory: Directory.Documents,
-          });
-        
-          const fileUri = await Filesystem.getUri({
-            path: `${newFolder}/${fullFileName}`,
-            directory: Directory.Documents,
-          }).catch((error) => {
-            console.error("Error getting file URI:", error);
-            throw error;
-          });
-
-
-          loading.dismiss();
-          console.log('Presentation saved successfully.');
-          alert(`Presentation was created successfully. File saved at: ${fileUri.uri}`);
-
-          const alertDialog = await this.alertController.create({
-            header: 'File saved successfully',
-            message: 'Do you want to open the file?',
-            buttons: [
-              {
-                text: 'Confirm',
-                handler: () => {
-                  this.openFileLocation(fileUri.uri); 
-                },
-              },
-              {
-                text: 'Cancel',
-                role: 'cancel',
-              },
-            ],
-          });
-          await alertDialog.present();
-
-
-        } catch (err) {
-          console.error('Error: Presentation was not created:', err);
-          alert('Saving file does not complete.');
         }
-      })
-    
+      
+        const result = await Filesystem.writeFile({
+          path: `${newFolder}/${fullFileName}`,
+          data: blob,
+          directory: Directory.Documents,
+        });
+      
+        const fileUri = await Filesystem.getUri({
+          path: `${newFolder}/${fullFileName}`,
+          directory: Directory.Documents,
+        }).catch((error) => {
+          console.error("Error getting file URI:", error);
+          throw error;
+        });
+        
+        for (let filename of slideFileNames) {
+          await Filesystem.deleteFile({
+            path: filename,
+            directory: Directory.Data,
+          });
+        }
+
+        await loading.dismiss();
+        console.log('Presentation saved successfully.');
+        alert(`Presentation was created successfully. File saved at: ${fileUri.uri}`);
+
+        const alertDialog = await this.alertController.create({
+          header: 'File saved successfully',
+          message: 'Do you want to open the file?',
+          buttons: [
+            {
+              text: 'Confirm',
+              handler: () => {
+                this.openFileLocation(fileUri.uri); 
+              },
+            },
+            {
+              text: 'Cancel',
+              role: 'cancel',
+            },
+          ],
+        });
+        await alertDialog.present();
+
+      } catch (err) {
+        console.error('Error: Presentation was not created:', err);
+        alert('Saving file does not complete.');
+      }
+      }) 
   } catch (err) {
     console.error("Error creating presentation: ", err);
     alert('Error: Presentation was not created.');
   }
+}
+
+isLogoSelected(): boolean {
+  return this.photoService.logos.some(logo => logo.selected);
 }
 
 }

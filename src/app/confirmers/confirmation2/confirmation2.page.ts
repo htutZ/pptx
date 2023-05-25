@@ -16,7 +16,8 @@ export class Confirmation2Page implements OnInit {
   formData: any;
   public photos: UserPhoto[] = [];
   onSubmit: any;
-
+  logos: UserPhoto[] = []; 
+  
   constructor(
     private formBuilder: FormBuilder,
     private router: Router,
@@ -33,8 +34,11 @@ export class Confirmation2Page implements OnInit {
   }
 
   ngOnInit() {
-    this.photoService.loadSaved().then((photos: UserPhoto[]) => {
-      this.photos = photos;
+    this.photoService.loadSaved().then((result: {photos: UserPhoto[], logos: UserPhoto[]}) => {
+      this.photos = result.photos;
+      this.logos = result.logos;
+      console.log(result.photos);
+      console.log(result.logos);
     });
     Storage.get({ key: 'formData' }).then((result) => {
       if (result.value) {

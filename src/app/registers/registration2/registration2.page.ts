@@ -14,6 +14,7 @@ export class Registration2Page implements OnInit {
 
   registrationForm: FormGroup;
   public photos: UserPhoto[] = [];
+  logos: UserPhoto[] = []; 
 
   constructor(
     private formBuilder: FormBuilder,
@@ -30,8 +31,11 @@ export class Registration2Page implements OnInit {
   }
 
   ngOnInit() {
-    this.photoService.loadSaved().then((photos: UserPhoto[]) => {
-      this.photos = photos;
+    this.photoService.loadSaved().then((result: {photos: UserPhoto[], logos: UserPhoto[]}) => {
+      this.photos = result.photos;
+      this.logos = result.logos;
+      console.log(result.photos);
+      console.log(result.logos);
     });
   }
   

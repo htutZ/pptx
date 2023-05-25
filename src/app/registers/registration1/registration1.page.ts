@@ -12,7 +12,8 @@ import { PhotoService, UserPhoto } from '../../services/photo.service';
 export class Registration1Page implements OnInit{
   registrationForm: FormGroup;
   public photos: UserPhoto[] = [];
-
+  logos: UserPhoto[] = []; 
+  
   constructor(
     private formBuilder: FormBuilder,
     private router: Router,
@@ -28,17 +29,17 @@ export class Registration1Page implements OnInit{
   }
 
   ngOnInit() {
-    this.photoService.loadSaved().then((photos: UserPhoto[]) => {
-      this.photos = photos;
+    this.photoService.loadSaved().then((result: {photos: UserPhoto[], logos: UserPhoto[]}) => {
+      this.photos = result.photos;
+      this.logos = result.logos;
+      console.log(result.photos);
+      console.log(result.logos);
     });
   }
   
   onSubmit() {
     // Save form data
     const formData = this.registrationForm.value;
-    console.log(
-      formData
-    )
     Storage.set({
       key: 'formData',
       value: JSON.stringify(formData)

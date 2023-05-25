@@ -24,7 +24,8 @@ export class Confirmation1Page implements OnInit {
   formData: any;
   public photos: UserPhoto[] = [];
   onSubmit: any;
-
+  logos: UserPhoto[] = []; 
+  
   constructor(
     private formBuilder: FormBuilder,
     private router: Router,
@@ -41,8 +42,11 @@ export class Confirmation1Page implements OnInit {
   }
 
   ngOnInit() {
-    this.photoService.loadSaved().then((photos: UserPhoto[]) => {
-      this.photos = photos;
+    this.photoService.loadSaved().then((result: {photos: UserPhoto[], logos: UserPhoto[]}) => {
+      this.photos = result.photos;
+      this.logos = result.logos;
+      console.log(result.photos);
+      console.log(result.logos);
     });
     Storage.get({ key: 'formData' }).then((result) => {
       if (result.value) {
@@ -56,6 +60,10 @@ export class Confirmation1Page implements OnInit {
       Storage.set({
         key: 'formData',
         value: JSON.stringify(newData)
+      }).then(() => {
+        console.log('Data stored successfully');
+      }).catch((err) => {
+        console.error('Error storing data:', err);
       });
     });
   
@@ -88,8 +96,11 @@ export class Confirmation1Page implements OnInit {
     await alert.present();
   }
 
-  submitRegistration(): void{
+  async submitRegistration(): Promise<void> {
+    await Storage.set({
+      key: 'formData',
+      value: JSON.stringify(this.registrationForm.value)
+    });
     this.router.navigateByUrl('/powerpoint1');
   }
-
 }

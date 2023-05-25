@@ -24,13 +24,19 @@
 
   <ion-card>
     <ion-card-content>
-      <ion-button expand="full" color="primary" (click)="newSlide()">New Slide</ion-button>
+      <ion-button expand="full" color="primary" (click)="newSlide()" [disabled]="!isLogoSelected()">New Slide</ion-button>
     </ion-card-content>
   </ion-card>
 
   <ion-card>
     <ion-card-content>
-      <ion-button expand="full" color="success" (click)="askToAddDate()">Save</ion-button>
+      <ion-button expand="full" color="success" (click)="askToAddDate()" [disabled]="!isLogoSelected()">Save this Slide</ion-button>
+    </ion-card-content>
+  </ion-card>
+
+  <ion-card>
+    <ion-card-content>
+      <ion-button expand="full" color="success" (click)="createPresentation()" [disabled]="!isLogoSelected()">Confirm</ion-button>
     </ion-card-content>
   </ion-card>
 
@@ -39,4 +45,6 @@
       <ion-button expand="full" color="medium" (click)="gobacktoTemplates()">Go Back To Templates Selection</ion-button>
     </ion-card-content>
   </ion-card>
+
+
 </ion-content>
