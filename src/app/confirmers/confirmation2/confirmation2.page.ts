@@ -4,6 +4,7 @@ import { Storage } from '@capacitor/storage';
 import { PhotoService, UserPhoto } from '../../services/photo.service';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { AlertController } from '@ionic/angular';
+import { TemplateService } from '../../services/template.service';
 
 @Component({
   selector: 'app-confirmation2',
@@ -11,6 +12,14 @@ import { AlertController } from '@ionic/angular';
   styleUrls: ['./confirmation2.page.scss'],
 })
 export class Confirmation2Page implements OnInit {
+
+  editStates = {
+    outletName: false,
+    outletCode: false,
+    channel: false,
+    township: false,
+    team: false
+};
 
   registrationForm: FormGroup;
   formData: any;
@@ -22,7 +31,8 @@ export class Confirmation2Page implements OnInit {
     private formBuilder: FormBuilder,
     private router: Router,
     public photoService: PhotoService,
-    private alertController: AlertController
+    private alertController: AlertController,
+    private templateService: TemplateService
   ) {
     this.registrationForm = this.formBuilder.group({
       outletName: ['', Validators.required],
@@ -43,9 +53,22 @@ export class Confirmation2Page implements OnInit {
     Storage.get({ key: 'formData' }).then((result) => {
       if (result.value) {
         this.formData = JSON.parse(result.value);
+        this.registrationForm.patchValue(this.formData);
         console.log(this.formData);
       }
     });
+
+    this.registrationForm.valueChanges.subscribe(newData => {
+      Storage.set({
+        key: 'formData',
+        value: JSON.stringify(newData)
+      }).then(() => {
+        console.log('Data stored successfully');
+      }).catch((err) => {
+        console.error('Error storing data:', err);
+      });
+    });
+  
   }
 
   async confirmRegistration() {
@@ -75,8 +98,30 @@ export class Confirmation2Page implements OnInit {
     await alert.present();
   }
 
-  submitRegistration(): void{
-    this.router.navigateByUrl('/powerpoint2');
+  async submitRegistration(): Promise<void> {
+    await Storage.set({
+      key: 'formData',
+      value: JSON.stringify(this.registrationForm.value)
+    });
+    this.router.navigateByUrl('/powerpoint1');
   }
 
+  getPhotosForTemplate() {
+    let maxPhotos;
+    switch (this.templateService.templateType) {
+      case 'template1':
+        maxPhotos = 2;
+        break;
+      case 'template2':
+        maxPhotos = 3;
+        break;
+      case 'template3':
+        maxPhotos = 4;
+        break;
+      default:
+        maxPhotos = this.photoService.photos.length;
+    }
+  
+    return this.photoService.photos.slice(0, maxPhotos);
+  }
 }

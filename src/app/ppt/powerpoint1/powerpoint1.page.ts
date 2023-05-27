@@ -11,7 +11,7 @@ import { Capacitor, PermissionState, Plugins } from '@capacitor/core';
 import { Filesystem, Directory, FilesystemDirectory, FilesystemEncoding } from '@capacitor/filesystem';
 import { FileOpener } from '@ionic-native/file-opener/ngx'; 
 import { LoadingController } from '@ionic/angular';
-import { TemplateService } from 'src/app/services/template.service';
+import { TemplateService } from '../../services/template.service';
 import { CapacitorSQLite, SQLiteDBConnection } from '@capacitor-community/sqlite';
 import { SQLiteService } from '../../services/sqlite.service';
 
@@ -29,7 +29,7 @@ export class Powerpoint1Page implements OnInit {
   public photos: UserPhoto[] = [];
   public slides: Slide[] = [];
   logos: UserPhoto[] = []; 
-  private slideCounter = 0;
+  public optionSelected = false;
 
   constructor(
     private formBuilder: FormBuilder,
@@ -42,7 +42,7 @@ export class Powerpoint1Page implements OnInit {
     private templateService: TemplateService,
     private sqlite: SQLiteService,
   ) {
-    
+    this.optionSelected = false;
     this.registrationForm = this.formBuilder.group({
       outletName: ['', Validators.required],
       outletCode: ['', Validators.required],
@@ -68,6 +68,27 @@ export class Powerpoint1Page implements OnInit {
     });
   }
   
+  noLogoSelected = false;
+
+  deselectLogos() {
+    if (this.noLogoSelected) {
+      for (let logo of this.photoService.logos) {
+        logo.selected = false;
+      }
+      this.optionSelected = true;
+    }
+  }
+
+  uncheckNoLogoSelected() {
+    if (!this.noLogoSelected) {
+      this.optionSelected = true;
+    }
+  }
+
+checkOptionSelected() {
+    let anyLogoSelected = this.photoService.logos.some(logo => logo.selected);
+    this.optionSelected = anyLogoSelected || this.noLogoSelected;
+}
 
 async requestWriteExternalStoragePermission() {
   if (Capacitor.isNativePlatform()) {
@@ -85,25 +106,6 @@ async requestWriteExternalStoragePermission() {
     console.log('Not a native platform, permission request not needed');
   }
 }
-
-  async newSlide() {
-    this.registrationForm.reset();
-
-    // Clear photos array
-    await this.photoService.resetGallery();
-  
-    // Navigate back to template1 page
-    this.router.navigate(['/template1']);
-  }
-
- async gobacktoTemplates(){
-
-    this.registrationForm.reset();
-
-    // Clear photos array
-    await this.photoService.resetGallery();
-    this.router.navigate(['/template-selection']);
-  }
 
   async openFileLocation(fileUri: string) {
     try {
@@ -166,38 +168,6 @@ async requestWriteExternalStoragePermission() {
   
     await alert.present();
   }
-  
-
-  async getFileName(): Promise<string> {
-    return new Promise<string>((resolve) => {
-      this.alertController.create({
-        cssClass: 'custom-alert',
-        header: 'Enter File Name',
-        inputs: [
-          {
-            id: 'input-field',
-            name: 'fileName',
-            type: 'text',
-            placeholder: 'Enter File Name Here'
-          },
-        ],
-        buttons: [
-          {
-            text: 'Cancel',
-            role: 'cancel',
-            cssClass: 'alert-cancel-button',
-            handler: () => resolve('')
-          },
-          {
-            text: 'Confirm',
-            cssClass: 'alert-confirm-button',
-            handler: (data) => resolve(data.fileName)
-          }
-        ]
-      }).then(alert => alert.present());
-    });
-  }
-
 
    async saveSlide(includeDate: boolean = false, date: Date | undefined = undefined) {
 
@@ -207,13 +177,15 @@ async requestWriteExternalStoragePermission() {
     if (!templateType) {
       // handle the case where templateType is null
       console.error("No template selected");
+      alert("No template selected.");
+      this.router.navigate(['/template-selection']);
       return;
     }
     const dateString = date ? format(date, "MMMM d, yyyy") : "";
   
     const logoPositions = [
       { x: 8.3, y: 0.35, w: 1.3, h: 0.5 },
-      { x: 8.3, y: 4.9, w: 1.3, h: 0.5 }
+      { x: 8.3, y: 5.1, w: 1.2, h: 0.4 }
     ];
   
     // Get selected logos from photoService
@@ -255,166 +227,10 @@ async requestWriteExternalStoragePermission() {
     console.log(newSlide);
     this.formData = {};
     this.photos = [];
+    this.router.navigate(['/finalpage']);
   }
 
-  }  
-
-  async createPresentation(includeDate: boolean = false, date: Date | undefined = undefined) {
-  try {
-    await this.requestWriteExternalStoragePermission();
-
-    const pptx = new pptxgen();
-
-    const directoryContents = await Filesystem.readdir({
-      path: '',
-      directory: Directory.Data
-    });
-      
-    const slideFileNames = directoryContents.files
-      .filter(fileInfo => fileInfo.name.startsWith('slide'))
-      .map(fileInfo => fileInfo.name)
-      .sort((a, b) => {
-        // Extract timestamps from the filename and sort based on them
-        const timestampA = Number(a.replace('slide', '').replace('.json', ''));
-        const timestampB = Number(b.replace('slide', '').replace('.json', ''));
-        return timestampA - timestampB;
-      });
-
-    for (let filename of slideFileNames) {
-      const jsonData = await Filesystem.readFile({
-        path: filename,
-        directory: Directory.Data,
-        encoding: FilesystemEncoding.UTF8
-      });
-      const slideData = JSON.parse(jsonData.data) as Slide;
-
-      // Add slides...
-      const slide = pptx.addSlide();
-
-      const contentQueue = [
-        { label: 'OUTLET NAME', value: slideData.formData.outletName },
-        { label: 'OUTLET CODE', value: slideData.formData.outletCode },
-        { label: 'CHANNEL', value: slideData.formData.channel },
-        { label: 'TOWNSHIP', value: slideData.formData.township },
-        { label: 'TEAM', value: slideData.formData.team },
-      ].filter(item => item.value);
-
-      contentQueue.forEach((item, index) => {
-        slide.addText(`${item.label}: ${item.value}`, {
-          x: 0.5,
-          y: 0.3 + index * 0.2,
-          color: "093C99",
-          bold: true,
-          fontSize: 15
-        });
-      });
-
-      // Add images based on the template type
-      for (let i = 0; i < slideData.photos.length; i++) {
-        if (slideData.photos[i]) {
-          const webviewPath = slideData.photos[i].webviewPath;
-          const photoData = webviewPath ? Capacitor.convertFileSrc(webviewPath) : '';
-          slide.addImage({ data: photoData, x: (i % 2) * 4.3 + 0.7, y: Math.floor(i / 2) * 1.8 + 1.3, w: 4, h: 3.5 });
-        }
-      }
-
-      // Add logos
-      for (let logo of slideData.logos) {
-        const { x, y, w, h } = logo.position;
-        slide.addImage({ data: logo.logoData, x, y, w, h });
-      }
-
-      if (slideData.dateString) {
-        slide.addText(slideData.dateString, { x: 0.5, y: 5.1, color: "093C99", bold: true, fontSize: 14 });
-      }
-    }
-
-    const fileName = await this.getFileName();
-
-    if (fileName === '') {
-      return;
-    }
-
-    const loading = await this.loadingController.create({
-      message: 'Please wait...',
-    });
-
-    const fullFileName = `${fileName}.pptx`;
-    pptx.write("base64")
-    .then(async (base64Data) => {
-      const blob = `data:application/vnd.openxmlformats-officedocument.presentationml.presentation;base64,${base64Data}`;
-      
-      try {
-      await loading.present();
-
-        const newFolder = 'powerpoints';
-        const entries = await Filesystem.readdir({
-          path: '',
-          directory: Directory.Documents,
-        });
-        const directoryExists = entries.files.some((entry) => entry.name === newFolder);
-      
-           if (!directoryExists) {
-          await Filesystem.mkdir({
-            path: newFolder,
-            directory: Directory.Documents,
-            recursive: true, 
-          });
-        }
-      
-        const result = await Filesystem.writeFile({
-          path: `${newFolder}/${fullFileName}`,
-          data: blob,
-          directory: Directory.Documents,
-        });
-      
-        const fileUri = await Filesystem.getUri({
-          path: `${newFolder}/${fullFileName}`,
-          directory: Directory.Documents,
-        }).catch((error) => {
-          console.error("Error getting file URI:", error);
-          throw error;
-        });
-        
-        for (let filename of slideFileNames) {
-          await Filesystem.deleteFile({
-            path: filename,
-            directory: Directory.Data,
-          });
-        }
-
-        await loading.dismiss();
-        console.log('Presentation saved successfully.');
-        alert(`Presentation was created successfully. File saved at: ${fileUri.uri}`);
-
-        const alertDialog = await this.alertController.create({
-          header: 'File saved successfully',
-          message: 'Do you want to open the file?',
-          buttons: [
-            {
-              text: 'Confirm',
-              handler: () => {
-                this.openFileLocation(fileUri.uri); 
-              },
-            },
-            {
-              text: 'Cancel',
-              role: 'cancel',
-            },
-          ],
-        });
-        await alertDialog.present();
-
-      } catch (err) {
-        console.error('Error: Presentation was not created:', err);
-        alert('Saving file does not complete.');
-      }
-      }) 
-  } catch (err) {
-    console.error("Error creating presentation: ", err);
-    alert('Error: Presentation was not created.');
-  }
-}
+  } 
 
 isLogoSelected(): boolean {
   return this.photoService.logos.some(logo => logo.selected);

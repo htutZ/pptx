@@ -1,50 +1,42 @@
 <ion-header>
   <ion-toolbar color="primary">
     <ion-buttons slot="start">
-      <ion-back-button defaultHref="/" text="" color="light"></ion-back-button>
+      <ion-back-button defaultHref="/" icon="arrow-back-outline" color="light"></ion-back-button>
     </ion-buttons>
     <ion-title>PowerPoint</ion-title>
   </ion-toolbar>
 </ion-header>
 
 <ion-content>
-  <ion-card>
-    <ion-card-header>
-      <ion-card-subtitle>Check the box of logos you would like to add</ion-card-subtitle>
-    </ion-card-header>
-    <ion-card-content>
-      <ion-row>
-        <ion-col size="6" *ngFor="let logo of photoService.logos; index as position">
-          <ion-img [src]="logo.webviewPath" style="max-height:100px;"></ion-img>
-          <input type="checkbox" [(ngModel)]="logo.selected">
-        </ion-col>
-      </ion-row>
-    </ion-card-content>
-  </ion-card>
+  <ion-grid>
+    <ion-row>
+      <ion-col size="12">
+        <ion-card>
+          <ion-card-header>
+            <ion-card-subtitle>Check the box of logos you would like to add</ion-card-subtitle>
+          </ion-card-header>
+          <ion-card-content>
+            <ion-item lines="none">
+              <ion-label>No Logo Selected</ion-label>
+              <ion-checkbox slot="start" [(ngModel)]="noLogoSelected" (ngModelChange)="noLogoSelected ? deselectLogos() : optionSelected = false;"></ion-checkbox>
+            </ion-item>
+            <ion-item lines="none" *ngFor="let logo of photoService.logos; index as position">
+              <ion-img [src]="logo.webviewPath" style="max-height:100px;"></ion-img>
+              <ion-checkbox slot="start" [(ngModel)]="logo.selected" (ngModelChange)="logo.selected ? uncheckNoLogoSelected() : optionSelected = false;"></ion-checkbox>
+            </ion-item>
+          </ion-card-content>
+        </ion-card>
+      </ion-col>
+    </ion-row>
 
-  <ion-card>
-    <ion-card-content>
-      <ion-button expand="full" color="primary" (click)="newSlide()" [disabled]="!isLogoSelected()">New Slide</ion-button>
-    </ion-card-content>
-  </ion-card>
-
-  <ion-card>
-    <ion-card-content>
-      <ion-button expand="full" color="success" (click)="askToAddDate()" [disabled]="!isLogoSelected()">Save this Slide</ion-button>
-    </ion-card-content>
-  </ion-card>
-
-  <ion-card>
-    <ion-card-content>
-      <ion-button expand="full" color="success" (click)="createPresentation()" [disabled]="!isLogoSelected()">Confirm</ion-button>
-    </ion-card-content>
-  </ion-card>
-
-  <ion-card>
-    <ion-card-content>
-      <ion-button expand="full" color="medium" (click)="gobacktoTemplates()">Go Back To Templates Selection</ion-button>
-    </ion-card-content>
-  </ion-card>
-
-
+    <ion-row>
+      <ion-col size="12">
+        <ion-button expand="full" color="success" (click)="askToAddDate()" [disabled]="!optionSelected">
+          <ion-icon slot="start" name="checkmark-done-outline"></ion-icon>
+          Save this Slide
+        </ion-button>
+      </ion-col>
+    </ion-row>
+    
+  </ion-grid>
 </ion-content>

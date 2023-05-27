@@ -4,23 +4,24 @@ import { UserPhoto, PhotoService } from '../../services/photo.service';
 import { Router } from '@angular/router';
 
 @Component({
-  selector: 'app-template2',
-  templateUrl: './template2.page.html',
-  styleUrls: ['./template2.page.scss'],
+  selector: 'app-template3',
+  templateUrl: './template3.page.html',
+  styleUrls: ['./template3.page.scss'],
 })
-export class Template2Page implements OnInit {
+export class Template3Page implements OnInit {
 
   alertController: any;
   images: any;
   imageLimit: any;
 
-  constructor(public photoService: PhotoService,
+  constructor(
+    public photoService: PhotoService,
      public actionSheetController: ActionSheetController,
-     private router: Router,) {}
+     private router: Router,
+  ) { }
 
-  async ngOnInit() {
+ async ngOnInit() {
     await this.photoService.loadSaved();
-
   }
 
   public async showActionSheet(photo: UserPhoto, position: number) {
@@ -56,7 +57,6 @@ export class Template2Page implements OnInit {
   }
   
   submit() {
-    this.router.navigateByUrl('/registration2');
+    this.router.navigateByUrl('/registration3');
   }
-
 }

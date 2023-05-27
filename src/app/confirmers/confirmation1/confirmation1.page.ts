@@ -4,6 +4,7 @@ import { Storage } from '@capacitor/storage';
 import { PhotoService, UserPhoto } from '../../services/photo.service';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { AlertController } from '@ionic/angular';
+import { TemplateService } from '../../services/template.service';
 
 @Component({
   selector: 'app-confirmation1',
@@ -30,7 +31,8 @@ export class Confirmation1Page implements OnInit {
     private formBuilder: FormBuilder,
     private router: Router,
     public photoService: PhotoService,
-    private alertController: AlertController
+    private alertController: AlertController,
+    private templateService: TemplateService
   ) {
     this.registrationForm = this.formBuilder.group({
       outletName: ['', Validators.required],
@@ -102,5 +104,24 @@ export class Confirmation1Page implements OnInit {
       value: JSON.stringify(this.registrationForm.value)
     });
     this.router.navigateByUrl('/powerpoint1');
+  }
+
+  getPhotosForTemplate() {
+    let maxPhotos;
+    switch (this.templateService.templateType) {
+      case 'template1':
+        maxPhotos = 2;
+        break;
+      case 'template2':
+        maxPhotos = 3;
+        break;
+      case 'template3':
+        maxPhotos = 4;
+        break;
+      default:
+        maxPhotos = this.photoService.photos.length;
+    }
+  
+    return this.photoService.photos.slice(0, maxPhotos);
   }
 }

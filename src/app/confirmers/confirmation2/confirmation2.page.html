@@ -1,9 +1,68 @@
 <ion-header>
-  <ion-toolbar>
-    <ion-title>confirmation2</ion-title>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/" text="" color="light"></ion-back-button>
+    </ion-buttons>
+    <ion-title>
+      Confirm Your Input Data
+    </ion-title>
   </ion-toolbar>
 </ion-header>
 
 <ion-content>
+  
+  <form [formGroup]="registrationForm" (ngSubmit)="onSubmit()">
+    <ion-list lines="full">
+        <ion-item>
+            <ion-label position="floating">Outlet Name</ion-label>
+            <ion-input type="text" formControlName="outletName" [readonly]="!editStates.outletName" [value]="formData?.outletName" 
+            [ngClass]="{'editable-field': editStates.outletName}"></ion-input>
+            <ion-icon name="create-outline" slot="end" (click)="editStates.outletName = !editStates.outletName"
+              [ngClass]="{'editable-icon': editStates.outletName}"></ion-icon>
+        </ion-item>
+        
+        <ion-item>
+            <ion-label position="floating">Outlet Code</ion-label>
+            <ion-input type="text" formControlName="outletCode" [readonly]="!editStates.outletCode" [value]="formData?.outletCode" 
+            [ngClass]="{'editable-field': editStates.outletCode}"></ion-input>
+            <ion-icon name="create-outline" slot="end" (click)="editStates.outletCode = !editStates.outletCode"
+            [ngClass]="{'editable-icon': editStates.outletCode}"></ion-icon>
+        </ion-item>
+        
+        <ion-item>
+            <ion-label position="floating">Channel</ion-label>
+            <ion-input type="text" formControlName="channel" [readonly]="!editStates.channel" [value]="formData?.channel" 
+            [ngClass]="{'editable-field': editStates.channel}"></ion-input>
+            <ion-icon name="create-outline" slot="end" (click)="editStates.channel = !editStates.channel"
+            [ngClass]="{'editable-icon': editStates.channel}"></ion-icon>
+        </ion-item>
+        
+        <ion-item>
+            <ion-label position="floating">Township</ion-label>
+            <ion-input type="text" formControlName="township" [readonly]="!editStates.township" [value]="formData?.township" 
+            [ngClass]="{'editable-field': editStates.township}"></ion-input>
+            <ion-icon name="create-outline" slot="end" (click)="editStates.township = !editStates.township"
+            [ngClass]="{'editable-icon': editStates.township}"></ion-icon>
+        </ion-item>
+        
+        <ion-item>
+            <ion-label position="floating">Team</ion-label>
+            <ion-input type="text" formControlName="team" [readonly]="!editStates.team" [value]="formData?.team" 
+            [ngClass]="{'editable-field': editStates.team}"></ion-input>
+            <ion-icon name="create-outline" slot="end" (click)="editStates.team = !editStates.team"
+            [ngClass]="{'editable-icon': editStates.team}"></ion-icon>
+        </ion-item>
+    </ion-list>
+</form>
+
+<ion-grid>
+  <ion-row>
+    <ion-col size="6" *ngFor="let photo of getPhotosForTemplate(); index as position">
+      <ion-img [src]="photo.webviewPath"></ion-img>
+    </ion-col>
+  </ion-row>
+</ion-grid>
+
+<ion-button expand="full" type="button" color="primary" (click)="confirmRegistration()">Next</ion-button>
 
 </ion-content>

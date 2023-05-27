@@ -42,7 +42,15 @@ const routes: Routes = [
   {
     path: 'confirmation2',
     loadChildren: () => import('./confirmers/confirmation2/confirmation2.module').then( m => m.Confirmation2PageModule)
+  },  {
+    path: 'finalpage',
+    loadChildren: () => import('./final/finalpage/finalpage.module').then( m => m.FinalpagePageModule)
   },
+  {
+    path: 'template3',
+    loadChildren: () => import('./templates/template3/template3.module').then( m => m.Template3PageModule)
+  },
+
 
 ];
 

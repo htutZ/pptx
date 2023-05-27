@@ -165,6 +165,25 @@
       }
     }
 
+    public async addNewToGallery4Pics() {
+      if (this.photos.length < 4) {
+        const capturedPhoto = await Camera.getPhoto({
+          resultType: CameraResultType.Uri,
+          allowEditing: true,
+          source: CameraSource.Camera,
+          quality: 100
+        });
+
+        const savedImageFile = await this.savePicture(capturedPhoto);
+        this.photos.unshift(savedImageFile);
+
+        Preferences.set({
+          key: this.PHOTO_STORAGE,
+          value: JSON.stringify(this.photos)
+        });
+      }
+    }
+
     public async resetGallery() {
       this.photos = [];
       this.logos = [];
@@ -245,6 +264,27 @@
       }
     }
 
+    public async takePicFromGallery4Pics() {
+      if (this.photos.length < 4) {
+        const capturedPhoto = await Camera.getPhoto({
+          resultType: CameraResultType.Uri,
+          allowEditing: true,
+          source: CameraSource.Photos,
+          quality: 100
+        });
+
+        const savedImageFile = await this.savePicture(capturedPhoto);
+        this.photos.unshift(savedImageFile);
+
+        Preferences.set({
+          key: this.PHOTO_STORAGE,
+          value: JSON.stringify(this.photos)
+        });
+
+
+      }
+    }
+
     private async savePicture(photo: Photo) {
       const base64Data = await this.readAsBase64(photo);
       const fileName = new Date().getTime() + '.jpeg';
@@ -295,6 +335,27 @@
       });
     }
 
+    public async deleteLogo(photo: Logo,position: number) {
+      // Get the logo at the specified position
+      const logo = this.logos[position];
+      
+      // Remove this logo from the logos reference data array
+      this.logos.splice(position, 1);
+    
+      // Update logos array cache by overwriting the existing logo array
+      await Preferences.set({
+        key: this.LOGO_STORAGE,
+        value: JSON.stringify(this.logos),
+      });
+    
+      // Delete logo file from filesystem
+      const filename = logo.filepath.substr(logo.filepath.lastIndexOf('/') + 1);
+      await Filesystem.deleteFile({
+        path: filename,
+        directory: Directory.Data,
+      });
+    }
+
     private convertBlobToBase64 = (blob: Blob) => new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onerror = reject;
@@ -326,3 +387,5 @@
     templateType: string;
     dateString?: string;
   }
+
+  

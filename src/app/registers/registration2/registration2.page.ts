@@ -1,9 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { FormGroup, FormBuilder, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
-import { ToastController } from '@ionic/angular';
 import { Storage } from '@capacitor/storage';
 import { UserPhoto, PhotoService } from '../../services/photo.service';
+import { TemplateService } from '../../services/template.service';
 
 @Component({
   selector: 'app-registration2',
@@ -19,7 +19,8 @@ export class Registration2Page implements OnInit {
   constructor(
     private formBuilder: FormBuilder,
     private router: Router,
-    public photoService: PhotoService
+    public photoService: PhotoService,
+    private templateService: TemplateService
   ) {
     this.registrationForm = this.formBuilder.group({
       outletName: ['', Validators.required],
@@ -42,9 +43,6 @@ export class Registration2Page implements OnInit {
   onSubmit() {
     // Save form data
     const formData = this.registrationForm.value;
-    console.log(
-      formData
-    )
     Storage.set({
       key: 'formData',
       value: JSON.stringify(formData)
@@ -52,5 +50,24 @@ export class Registration2Page implements OnInit {
 
     // Navigate to the second page
     this.router.navigateByUrl('/confirmation2');
+  }
+
+  getPhotosForTemplate() {
+    let maxPhotos;
+    switch (this.templateService.templateType) {
+      case 'template1':
+        maxPhotos = 2;
+        break;
+      case 'template2':
+        maxPhotos = 3;
+        break;
+      case 'template3':
+        maxPhotos = 4;
+        break;
+      default:
+        maxPhotos = this.photoService.photos.length;
+    }
+  
+    return this.photoService.photos.slice(0, maxPhotos);
   }
 }
