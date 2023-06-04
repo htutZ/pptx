@@ -1,4 +1,4 @@
-<?xml version="1.1" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
   package="io.ionic.starter">
 
@@ -10,6 +10,7 @@
     android:supportsRtl="true"
     android:theme="@style/AppTheme"
     android:fullBackupContent="false"
+    android:requestLegacyExternalStorage="true"
     android:dataExtractionRules="@xml/data_extraction_rules">
 
     <activity
@@ -18,7 +19,8 @@
       android:label="@string/title_activity_main"
       android:theme="@style/AppTheme.NoActionBarLaunch"
       android:launchMode="singleTask"
-      android:exported="true">
+      android:exported="true"
+      android:noHistory="false">
 
       <intent-filter>
         <action android:name="android.intent.action.MAIN" />
@@ -41,6 +43,8 @@
   <!-- Permissions -->
 
   <uses-permission android:name="android.permission.INTERNET" />
+  <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
   <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-  <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+  <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+    android:maxSdkVersion="32" />
 </manifest>

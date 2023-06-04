@@ -1,7 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { ActionSheetController } from '@ionic/angular';
-import { UserPhoto, PhotoService } from '../../services/photo.service';
+import { UserPhoto, PhotoService, Logo } from '../../services/photo.service';
 import { Router } from '@angular/router';
+import { Platform } from '@ionic/angular';
 
 @Component({
   selector: 'app-template1',
@@ -15,36 +16,43 @@ export class Template1Page implements OnInit {
   imageLimit: any;
 
   constructor(public photoService: PhotoService,
+    private platform: Platform,
      public actionSheetController: ActionSheetController,
      private router: Router,) {}
 
   async ngOnInit() {
     await this.photoService.loadSaved();
-
   }
 
-  public async showActionSheet(photo: UserPhoto, position: number) {
+  async showActionSheet(photo: UserPhoto | Logo, position: number, type: 'photo' | 'logo') {
     const actionSheet = await this.actionSheetController.create({
-      header: 'Photos',
-      buttons: [
-        {
-        text: 'Delete',
-        role: 'destructive',
-        icon: 'trash',
-        handler: () => {
-          this.photoService.deletePicture(photo, position);
-        }
-      }, {
-        text: 'Cancel',
-        icon: 'close',
-        role: 'cancel',
-        handler: () => {
-          // Nothing to do, action sheet is automatically closed
-         }
-      }]
+        header: "Photos",
+        buttons: [
+            {
+                text: "Delete",
+                role: "destructive",
+                icon: "trash",
+                handler: () => {
+                    if (type === 'logo') {
+                      const logo = photo as Logo;
+                        this.photoService.deleteLogo(logo, position);
+                    } else {
+                        this.photoService.deletePicture(photo, position);
+                    }
+                },
+            },
+            {
+                text: "Cancel",
+                role: "cancel",
+                icon: "close",
+                handler: () => {
+                    // Nothing to do, action sheet is automatically closed
+                },
+            },
+        ],
     });
     await actionSheet.present();
-  }
+}
 
 
   async showAlert(header: string, message: string) {

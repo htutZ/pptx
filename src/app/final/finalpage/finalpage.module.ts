@@ -1,12 +1,12 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { LottieAnimationViewModule } from 'ng-lottie';
 import { IonicModule } from '@ionic/angular';
 
 import { FinalpagePageRoutingModule } from './finalpage-routing.module';
 import { FileOpener } from '@ionic-native/file-opener/ngx';
 import { FinalpagePage } from './finalpage.page';
+import { AndroidPermissions } from '@ionic-native/android-permissions/ngx';
 
 @NgModule({
   imports: [
@@ -15,9 +15,9 @@ import { FinalpagePage } from './finalpage.page';
     ReactiveFormsModule,
     IonicModule,
     FinalpagePageRoutingModule,
-    LottieAnimationViewModule.forRoot()
   ],
   providers: [
+    AndroidPermissions,
     FileOpener,
   ],
   declarations: [FinalpagePage]

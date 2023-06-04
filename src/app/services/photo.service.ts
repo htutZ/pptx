@@ -228,7 +228,7 @@
           resultType: CameraResultType.Uri,
           allowEditing: true,
           source: CameraSource.Photos,
-          quality: 100
+          quality: 80
         });
 
         const savedImageFile = await this.savePicture(capturedPhoto);
@@ -249,7 +249,7 @@
           resultType: CameraResultType.Uri,
           allowEditing: true,
           source: CameraSource.Photos,
-          quality: 100
+          quality: 80
         });
 
         const savedImageFile = await this.savePicture(capturedPhoto);
@@ -270,7 +270,7 @@
           resultType: CameraResultType.Uri,
           allowEditing: true,
           source: CameraSource.Photos,
-          quality: 100
+          quality: 80
         });
 
         const savedImageFile = await this.savePicture(capturedPhoto);

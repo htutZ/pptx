@@ -1,0 +1,46 @@
+  if (Capacitor.isNativePlatform()) {
+    try {
+      const permission = this.androidPermissions.PERMISSION.WRITE_EXTERNAL_STORAGE;
+      const { hasPermission } = await this.androidPermissions.checkPermission(permission);
+      
+      if (!hasPermission) {
+        // Show a custom UI here to explain to the user why you need the permission
+        const alert = await this.alertController.create({
+          header: 'Permission Required',
+          message: 'This app requires storage permission to save files. Please grant permission.',
+          buttons: [{
+            text: 'Okay',
+            handler: async () => {
+              const { hasPermission: requestResult } = await this.androidPermissions.requestPermission(permission);
+              
+              if (requestResult) {
+                console.log('Permission granted: WRITE_EXTERNAL_STORAGE');
+                return Promise.resolve(true);
+              } else {
+                console.error('Permission not granted: WRITE_EXTERNAL_STORAGE');
+                return Promise.resolve(false);
+              }
+            },
+          }],
+        });
+        await alert.present();
+      } else {
+        console.log('Permission already granted: WRITE_EXTERNAL_STORAGE');
+        return Promise.resolve(true);
+      }
+    } catch (error) {
+      console.error('Error requesting permission:', error);
+      return Promise.resolve(false);
+    }
+  } else {
+    console.log('Not a native platform, permission request not needed');
+    return Promise.resolve(true);
+  }
+  return Promise.resolve(false);
+
+  import { Device } from '@capacitor/device';
+
+async function getAndroidVersion() {
+  const info = await Device.getInfo();
+  console.log(`Running on Android version: ${info.osVersion}`);
+}

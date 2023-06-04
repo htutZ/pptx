@@ -50,6 +50,14 @@ const routes: Routes = [
     path: 'template3',
     loadChildren: () => import('./templates/template3/template3.module').then( m => m.Template3PageModule)
   },
+  {
+    path: 'registration3',
+    loadChildren: () => import('./registers/registration3/registration3.module').then( m => m.Registration3PageModule)
+  },
+  {
+    path: 'confirmation3',
+    loadChildren: () => import('./confirmers/confirmation3/confirmation3.module').then( m => m.Confirmation3PageModule)
+  },
 
 
 ];

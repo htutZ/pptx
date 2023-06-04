@@ -17,7 +17,7 @@
   <ion-grid>
     <ion-row class="scroll-container">
       <ion-col size="6" *ngFor="let photo of photoService.photos; index as position">
-        <ion-img [src]="photo.webviewPath" (click)="showActionSheet(photo, position)"></ion-img>
+        <ion-img [src]="photo.webviewPath" (click)="showActionSheet(photo, position, 'photo')"></ion-img>
       </ion-col>
     </ion-row>
   </ion-grid>
@@ -40,10 +40,10 @@
   <ion-grid>
     <ion-row class="scroll-container">
       <ion-col size="6" *ngFor="let logo of photoService.logos; index as position">
-        <ion-img [src]="logo.webviewPath"></ion-img>
+        <ion-img [src]="logo.webviewPath" (click)="showActionSheet(logo, position, 'logo')"></ion-img>
       </ion-col>
     </ion-row>
-  </ion-grid>
+</ion-grid>
 
   <ion-row>
     <ion-col>

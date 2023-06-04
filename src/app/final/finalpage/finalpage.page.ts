@@ -14,6 +14,11 @@ import { LoadingController } from '@ionic/angular';
 import { TemplateService } from '../../services/template.service';
 import { CapacitorSQLite, SQLiteDBConnection } from '@capacitor-community/sqlite';
 import { SQLiteService } from '../../services/sqlite.service';
+import { Device } from '@ionic-native/device/ngx';
+
+const TEMPLATE1 = 'template1';
+const TEMPLATE2 = 'template2';
+const TEMPLATE3 = 'template3';
 
 @Component({
   selector: 'app-finalpage',
@@ -40,6 +45,7 @@ export class FinalpagePage implements OnInit {
     private fileOpener: FileOpener,
     private loadingController: LoadingController,
     private templateService: TemplateService,
+    private device: Device,
     private sqlite: SQLiteService,
   ) {
     this.optionSelected = false;
@@ -67,20 +73,69 @@ export class FinalpagePage implements OnInit {
     });
   }
 
-  async requestWriteExternalStoragePermission() {
+  async presentAlert() {
+    const alert = await this.alertController.create({
+      header: 'Permission Required',
+      message: 'App requires storage permissions to save Slides. Please grant permissions.',
+      buttons: [{
+        text: 'Grant Permission',
+        handler: () => {
+          this.requestWriteExternalStoragePermission();
+        },
+      }],
+    });
+    await alert.present();
+  }
+
+  async requestWriteExternalStoragePermission(): Promise<boolean> {
     if (Capacitor.isNativePlatform()) {
       try {
-        const status = await Filesystem.requestPermissions();
-        if (status.publicStorage === 'granted') {
+        if (this.device.platform === 'Android' && parseInt(this.device.version) >= 10) {
+          // Use NeoLSN/cordova-plugin-android-permissions for Android 10+
+          const androidPermissions = new AndroidPermissions();
+          const permission = androidPermissions.PERMISSION.WRITE_EXTERNAL_STORAGE;
+          const readPermission = androidPermissions.PERMISSION.READ_EXTERNAL_STORAGE;
+
+          const hasReadPermission = await androidPermissions.checkPermission(readPermission);
+          if (!hasReadPermission.hasPermission) {
+            const result = await androidPermissions.requestPermission(readPermission);
+            if (!result.hasPermission) {
+              console.error('Permission not granted: READ_EXTERNAL_STORAGE');
+              await this.presentAlert(); // Show a message to the user explaining why the permission is needed
+              return false;
+            }
+          }
+
+          const hasPermission = await androidPermissions.checkPermission(permission);
+          if (!hasPermission.hasPermission) {
+            const result = await androidPermissions.requestPermission(permission);
+            if (!result.hasPermission) {
+              console.error('Permission not granted: WRITE_EXTERNAL_STORAGE');
+              await this.presentAlert(); // Show a message to the user explaining why the permission is needed
+              return false;
+            }
+          }
           console.log('Permission granted: WRITE_EXTERNAL_STORAGE');
+          return true;
         } else {
-          console.error('Permission not granted: WRITE_EXTERNAL_STORAGE');
+          // Use original method for platforms other than Android 10+
+          const { publicStorage } = await Filesystem.requestPermissions();
+          if (publicStorage === 'granted') {
+            console.log('Permission granted: WRITE_EXTERNAL_STORAGE');
+            return true;
+          } else {
+            console.error('Permission not granted: WRITE_EXTERNAL_STORAGE');
+            await this.presentAlert(); // Show a message to the user explaining why the permission is needed
+            return false;
+          }
         }
       } catch (error) {
         console.error('Error requesting permission:', error);
+        return false;
       }
     } else {
       console.log('Not a native platform, permission request not needed');
+      return true;
     }
   }
 
@@ -92,23 +147,16 @@ export class FinalpagePage implements OnInit {
       console.error('Error opening file location:', error);
     }
   }
-
-  async newSlide() {
+  resetData() {
     this.registrationForm.reset();
-
-    // Clear photos array
-    await this.photoService.resetGallery();
-  
-    // Navigate back to template1 page
-    this.router.navigate(['/template-selection']);
+    return this.photoService.resetGallery();
   }
 
- async gobacktoTemplates(){
-
-    this.registrationForm.reset();
-
-    // Clear photos array
-    await this.photoService.resetGallery();
+  async newSlide() {
+    
+    await this.resetData();
+  
+    // Navigate back to template1 page
     this.router.navigate(['/template-selection']);
   }
 
@@ -135,16 +183,47 @@ export class FinalpagePage implements OnInit {
           {
             text: 'Confirm',
             cssClass: 'alert-confirm-button',
-            handler: (data) => resolve(data.fileName)
+            handler: (data) => {
+              console.log(data);  // Add this line to log the data object
+              resolve(data.fileName)
+            }
           }
         ]
-      }).then(alert => alert.present());
+      }).then(alert => {
+        alert.present().then(() => {
+          const input: any = document.querySelector('ion-alert input');
+          input.focus();
+          return;
+        });
+        alert.onDidDismiss().then(() => {
+          // Remove the custom-alert CSS class after dismissing the alert
+          const inputField = document.getElementById('input-field');
+          if (inputField) {
+            inputField.classList.remove('custom-alert');
+          }
+        });
+      });
     });
   }
 
   async createPresentation(includeDate: boolean = false, date: Date | undefined = undefined) {
     try {
-      await this.requestWriteExternalStoragePermission();
+      const storagePermissionStatus = await this.requestWriteExternalStoragePermission();
+
+      if (!storagePermissionStatus) {
+        const alert = await this.alertController.create({
+          header: 'Permission Required',
+          message: 'App requires storage permissions to create presentation. Please grant permissions.',
+          buttons: [{
+            text: 'Grant Permission',
+            handler: () => {
+              this.requestWriteExternalStoragePermission();
+            },
+          }],
+        });
+        await alert.present();
+        return;
+      }
   
       const pptx = new pptxgen();
   
@@ -194,13 +273,13 @@ export class FinalpagePage implements OnInit {
   
         let maxPhotos;
         switch (slideData.templateType) {
-          case 'template1':
+          case TEMPLATE1:
             maxPhotos = 2;
             break;
-          case 'template2':
+           case TEMPLATE2:
             maxPhotos = 3;
             break;
-          case 'template3':
+            case TEMPLATE3:
             maxPhotos = 4;
             break;
         }
@@ -213,14 +292,14 @@ export class FinalpagePage implements OnInit {
       
             let x,   y, w, h;
             switch (slideData.templateType) {
-              case 'template1':
+              case TEMPLATE1:
                 if (i == 0) {
                   x = 0.5; y = 1.3; w = 4.2; h = 3.7;
                 } else {
                   x = 5.1; y = 1.3; w = 4.2; h = 3.7;
                 }
                 break;
-              case 'template2':
+              case TEMPLATE2:
                 if (i == 0) {
                   x = 0.5; y = 1.3; w = 4.1; h = 3.7;
                 } else if (i == 1) {
@@ -229,7 +308,7 @@ export class FinalpagePage implements OnInit {
                   x = 7.25; y = 1.3; w = 2.4; h = 3.7;
                 }
                 break;
-              case 'template3':
+              case TEMPLATE3:
                 w = 4.1;
                 h = 1.85;
                 if (i == 0) {
@@ -275,7 +354,7 @@ export class FinalpagePage implements OnInit {
         const blob = `data:application/vnd.openxmlformats-officedocument.presentationml.presentation;base64,${base64Data}`;
         
         try {
-        await loading.present();
+          await loading.present();
   
           const newFolder = 'powerpoints';
           const entries = await Filesystem.readdir({
@@ -336,6 +415,7 @@ export class FinalpagePage implements OnInit {
           await alertDialog.present();
   
         } catch (err) {
+          await loading.dismiss();
           console.error('Error: Presentation was not created:', err);
           alert('Saving file does not complete.');
         }
