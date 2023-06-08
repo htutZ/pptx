@@ -14,6 +14,7 @@ import { TemplateService } from '../../services/template.service';
 import { CapacitorSQLite, SQLiteDBConnection } from '@capacitor-community/sqlite';
 import { SQLiteService } from '../../services/sqlite.service';
 import { Device } from '@ionic-native/device/ngx';
+import { DozeOptimize } from 'capacitor-doze-optimize';
 
 @Component({
   selector: 'app-powerpoint1',
@@ -67,6 +68,14 @@ export class Powerpoint1Page implements OnInit {
         console.log(this.formData);
       }
     });
+    if (this.device.manufacturer.toLowerCase() === 'huawei') {
+      DozeOptimize.isIgnoringBatteryOptimizations().then(response => {
+        console.log(response);
+        if(response.isIgnoring === false){
+          DozeOptimize.requestOptimizationsMenu();
+        }
+      });
+    }
   }
   
   noLogoSelected = false;
