@@ -8,13 +8,16 @@ import { Storage } from '@capacitor/storage';
 import { format } from 'date-fns';
 import { AndroidPermissions } from '@ionic-native/android-permissions/ngx';
 import { Capacitor, PermissionState, Plugins } from '@capacitor/core';
-import { Filesystem, Directory, FilesystemDirectory, FilesystemEncoding } from '@capacitor/filesystem';
+import { Filesystem, Directory, FilesystemDirectory, Encoding } from '@capacitor/filesystem';
 import { FileOpener } from '@ionic-native/file-opener/ngx'; 
 import { LoadingController } from '@ionic/angular';
 import { TemplateService } from '../../services/template.service';
 import { CapacitorSQLite, SQLiteDBConnection } from '@capacitor-community/sqlite';
 import { SQLiteService } from '../../services/sqlite.service';
-import { Device } from '@ionic-native/device/ngx';
+import { Device } from '@capacitor/device';
+import { Manage_All_Access } from 'manage-access';
+import { Keyboard } from '@capacitor/keyboard';
+import { FileWriterPlugin } from 'file-writer'
 
 const TEMPLATE1 = 'template1';
 const TEMPLATE2 = 'template2';
@@ -45,7 +48,6 @@ export class FinalpagePage implements OnInit {
     private fileOpener: FileOpener,
     private loadingController: LoadingController,
     private templateService: TemplateService,
-    private device: Device,
     private sqlite: SQLiteService,
   ) {
     this.optionSelected = false;
@@ -88,55 +90,85 @@ export class FinalpagePage implements OnInit {
   }
 
   async requestWriteExternalStoragePermission(): Promise<boolean> {
-    if (Capacitor.isNativePlatform()) {
-      try {
-        if (this.device.platform === 'Android' && parseInt(this.device.version) >= 10) {
-          // Use NeoLSN/cordova-plugin-android-permissions for Android 10+
-          const androidPermissions = new AndroidPermissions();
-          const permission = androidPermissions.PERMISSION.WRITE_EXTERNAL_STORAGE;
-          const readPermission = androidPermissions.PERMISSION.READ_EXTERNAL_STORAGE;
-
-          const hasReadPermission = await androidPermissions.checkPermission(readPermission);
-          if (!hasReadPermission.hasPermission) {
-            const result = await androidPermissions.requestPermission(readPermission);
-            if (!result.hasPermission) {
-              console.error('Permission not granted: READ_EXTERNAL_STORAGE');
-              await this.presentAlert(); // Show a message to the user explaining why the permission is needed
-              return false;
-            }
-          }
-
-          const hasPermission = await androidPermissions.checkPermission(permission);
-          if (!hasPermission.hasPermission) {
-            const result = await androidPermissions.requestPermission(permission);
-            if (!result.hasPermission) {
-              console.error('Permission not granted: WRITE_EXTERNAL_STORAGE');
-              await this.presentAlert(); // Show a message to the user explaining why the permission is needed
-              return false;
-            }
-          }
-          console.log('Permission granted: WRITE_EXTERNAL_STORAGE');
-          return true;
-        } else {
-          // Use original method for platforms other than Android 10+
-          const { publicStorage } = await Filesystem.requestPermissions();
-          if (publicStorage === 'granted') {
-            console.log('Permission granted: WRITE_EXTERNAL_STORAGE');
-            return true;
-          } else {
-            console.error('Permission not granted: WRITE_EXTERNAL_STORAGE');
-            await this.presentAlert(); // Show a message to the user explaining why the permission is needed
+    try {
+      if (Capacitor.isNativePlatform()) {
+        const info = await Device.getInfo();
+        if (info.platform === 'android') {
+          let androidVersion: number;
+          try {
+            androidVersion = parseInt(info.osVersion);
+            console.log(androidVersion);
+          } catch (error) {
+            console.error('Error parsing Android version:', error);
             return false;
           }
+  
+          if (androidVersion >= 10 && androidVersion < 13) {
+            console.log("this is 10,11,12");
+            const androidPermissions = new AndroidPermissions();
+            const permission = androidPermissions.PERMISSION.WRITE_EXTERNAL_STORAGE;
+            const readPermission = androidPermissions.PERMISSION.READ_EXTERNAL_STORAGE;
+  
+            const hasReadPermission = await androidPermissions.checkPermission(readPermission);
+            if (!hasReadPermission.hasPermission) {
+              const result = await androidPermissions.requestPermission(readPermission);
+              if (!result.hasPermission) {
+                console.error('Permission not granted: READ_EXTERNAL_STORAGE'); 
+                return false;
+              }
+            }
+  
+            const hasPermission = await androidPermissions.checkPermission(permission);
+            if (!hasPermission.hasPermission) {
+              const result = await androidPermissions.requestPermission(permission);
+              if (!result.hasPermission) {
+                console.error('Permission not granted: WRITE_EXTERNAL_STORAGE'); 
+                return false;
+              }
+            }
+            console.log('Permission granted: WRITE_EXTERNAL_STORAGE');
+            return true;
+          } else if (androidVersion >= 13) {
+            console.log("this is 13+")
+  
+            try {
+              const checkResult = await Manage_All_Access.checkAllFilesAccessPermission();
+              if (checkResult.hasPermission) {
+                  console.log('Permission already granted: MANAGE_EXTERNAL_STORAGE');
+                  return true;
+              }
+              await Manage_All_Access.requestAllFilesAccessPermission();
+              console.log('Permission granted: MANAGE_EXTERNAL_STORAGE');
+              return true;
+          } catch (error) {
+              console.error('Permission not granted: MANAGE_EXTERNAL_STORAGE', error);
+              return false;
+          }
+          } else {
+            console.log("9-")
+            const { publicStorage } = await Filesystem.requestPermissions();
+            if (publicStorage === 'granted') {
+              console.log('Permission granted: WRITE_EXTERNAL_STORAGE');
+              return true;
+            } else {
+              console.error('Permission not granted: WRITE_EXTERNAL_STORAGE');
+              return false;
+            }
+          }
+        } else {
+          console.log('Not a native platform, permission request not needed');
+          return true;
         }
-      } catch (error) {
-        console.error('Error requesting permission:', error);
-        return false;
+      } else {
+        console.log('Not a native platform, permission request not needed');
+        return true;
       }
-    } else {
-      console.log('Not a native platform, permission request not needed');
-      return true;
+    } catch (error) {
+      console.error('Error in requestWriteExternalStoragePermission:', error);
+      return false;
     }
+  
+    return false;
   }
 
   async openFileLocation(fileUri: string) {
@@ -206,22 +238,12 @@ export class FinalpagePage implements OnInit {
     });
   }
 
+
   async createPresentation(includeDate: boolean = false, date: Date | undefined = undefined) {
     try {
       const storagePermissionStatus = await this.requestWriteExternalStoragePermission();
-
+      console.log('Storage permission status:', storagePermissionStatus);
       if (!storagePermissionStatus) {
-        const alert = await this.alertController.create({
-          header: 'Permission Required',
-          message: 'App requires storage permissions to create presentation. Please grant permissions.',
-          buttons: [{
-            text: 'Grant Permission',
-            handler: () => {
-              this.requestWriteExternalStoragePermission();
-            },
-          }],
-        });
-        await alert.present();
         return;
       }
   
@@ -246,7 +268,7 @@ export class FinalpagePage implements OnInit {
         const jsonData = await Filesystem.readFile({
           path: filename,
           directory: Directory.Data,
-          encoding: FilesystemEncoding.UTF8
+          encoding: Encoding.UTF8
         });
         const slideData = JSON.parse(jsonData.data) as Slide;
   
@@ -359,27 +381,33 @@ export class FinalpagePage implements OnInit {
           const newFolder = 'powerpoints';
           const entries = await Filesystem.readdir({
             path: '',
-            directory: Directory.Documents,
+            directory: Directory.External,
           });
           const directoryExists = entries.files.some((entry) => entry.name === newFolder);
         
              if (!directoryExists) {
             await Filesystem.mkdir({
               path: newFolder,
-              directory: Directory.Documents,
+              directory: Directory.External,
               recursive: true, 
             });
           }
         
-          const result = await Filesystem.writeFile({
-            path: `${newFolder}/${fullFileName}`,
-            data: blob,
-            directory: Directory.Documents,
-          });
+          try {
+            const result = await Filesystem.writeFile({
+                path: `${newFolder}/${fullFileName}`,
+                data: blob,
+                directory: Directory.External,
+            });
+            console.log('Write result:', result);  // Log the result for debugging
+        } catch (err) {
+            console.error('Error writing file:', err);
+            throw err;  // Rethrow the error to be caught in the outer try-catch block
+        }
         
           const fileUri = await Filesystem.getUri({
             path: `${newFolder}/${fullFileName}`,
-            directory: Directory.Documents,
+            directory: Directory.External,
           }).catch((error) => {
             console.error("Error getting file URI:", error);
             throw error;

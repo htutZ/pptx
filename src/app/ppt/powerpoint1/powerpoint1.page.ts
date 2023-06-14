@@ -11,10 +11,9 @@ import { Filesystem, Directory, FilesystemDirectory, FilesystemEncoding, Encodin
 import { FileOpener } from '@ionic-native/file-opener/ngx'; 
 import { LoadingController } from '@ionic/angular';
 import { TemplateService } from '../../services/template.service';
-import { CapacitorSQLite, SQLiteDBConnection } from '@capacitor-community/sqlite';
-import { SQLiteService } from '../../services/sqlite.service';
-import { Device } from '@ionic-native/device/ngx';
+import { Device } from '@capacitor/device';
 import { DozeOptimize } from 'capacitor-doze-optimize';
+import { Manage_All_Access } from 'manage-access';
 
 @Component({
   selector: 'app-powerpoint1',
@@ -23,8 +22,6 @@ import { DozeOptimize } from 'capacitor-doze-optimize';
 })
 export class Powerpoint1Page implements OnInit {
 
-  db!: SQLiteDBConnection;
-  dbName: string = 'pptx';
   registrationForm: FormGroup;
   formData: any;
   public photos: UserPhoto[] = [];
@@ -41,8 +38,6 @@ export class Powerpoint1Page implements OnInit {
     private fileOpener: FileOpener,
     private loadingController: LoadingController,
     private templateService: TemplateService,
-    private device: Device,
-    private sqlite: SQLiteService,
   ) {
     this.optionSelected = false;
     this.registrationForm = this.formBuilder.group({
@@ -68,16 +63,39 @@ export class Powerpoint1Page implements OnInit {
         console.log(this.formData);
       }
     });
-    if (this.device.manufacturer.toLowerCase() === 'huawei') {
-      DozeOptimize.isIgnoringBatteryOptimizations().then(response => {
-        console.log(response);
-        if(response.isIgnoring === false){
-          DozeOptimize.requestOptimizationsMenu();
-        }
-      });
-    }
+    this.checkOptimizationStatus();
   }
   
+
+  async checkOptimizationStatus(): Promise<void> {
+    try {
+      const info = await Device.getInfo();
+  
+      if (!info.manufacturer) {
+        console.error('Cannot determine device manufacturer.');
+        return;
+      }
+  
+      console.log(`Device manufacturer: ${info.manufacturer}`);
+      if (info.manufacturer.toLowerCase() === 'huawei') {
+        try {
+          const response = await DozeOptimize.isIgnoringBatteryOptimizations();
+          console.log(response);
+  
+          if(response.isIgnoring === false){
+            DozeOptimize.requestOptimizationsMenu();
+          }
+        } catch (error) {
+          console.error('An error occurred while checking battery optimizations:', error);
+        }
+      } else {
+        console.log('This functionality is specific for Huawei devices.');
+      }
+    } catch (error) {
+      console.error('Error getting device info:', error);
+    }
+  }
+
   noLogoSelected = false;
 
   deselectLogos() {
@@ -114,45 +132,99 @@ async presentAlert() {
   await alert.present();
 }
 
-async requestWriteExternalStoragePermission(): Promise<boolean> {
-  if (Capacitor.isNativePlatform()) {
-    try {
-      if (this.device.platform === 'Android' && parseInt(this.device.version) >= 10) {
-        // Use NeoLSN/cordova-plugin-android-permissions for Android 10+
-        const androidPermissions = new AndroidPermissions();
-        const permission = androidPermissions.PERMISSION.WRITE_EXTERNAL_STORAGE;
+async requestManageAllAccessPermission(): Promise<boolean> {
+  const manageAllAccessPlugin: any = Manage_All_Access;
+  try {
+    await manageAllAccessPlugin.requestAllFilesAccessPermission();
+    console.log('Permission granted: MANAGE_EXTERNAL_STORAGE');
+    // You need to add your own code to handle the result of the permission request.
+    return true;
+  } catch (error) {
+    console.error('Permission not granted: MANAGE_EXTERNAL_STORAGE');
+    return false;
+  }
+}
 
-        const hasPermission = await androidPermissions.checkPermission(permission);
-        if (!hasPermission.hasPermission) {
-          const result = await androidPermissions.requestPermission(permission);
-          if (!result.hasPermission) {
+async requestWriteExternalStoragePermission(): Promise<boolean> {
+  try {
+    if (Capacitor.isNativePlatform()) {
+      const info = await Device.getInfo();
+      if (info.platform === 'android') {
+        let androidVersion: number;
+        try {
+          androidVersion = parseInt(info.osVersion);
+          console.log(androidVersion);
+        } catch (error) {
+          console.error('Error parsing Android version:', error);
+          return false;
+        }
+
+        if (androidVersion >= 10 && androidVersion < 13) {
+          console.log("this is 10,11,12");
+          const androidPermissions = new AndroidPermissions();
+          const permission = androidPermissions.PERMISSION.WRITE_EXTERNAL_STORAGE;
+          const readPermission = androidPermissions.PERMISSION.READ_EXTERNAL_STORAGE;
+
+          const hasReadPermission = await androidPermissions.checkPermission(readPermission);
+          if (!hasReadPermission.hasPermission) {
+            const result = await androidPermissions.requestPermission(readPermission);
+            if (!result.hasPermission) {
+              console.error('Permission not granted: READ_EXTERNAL_STORAGE'); 
+              return false;
+            }
+          }
+
+          const hasPermission = await androidPermissions.checkPermission(permission);
+          if (!hasPermission.hasPermission) {
+            const result = await androidPermissions.requestPermission(permission);
+            if (!result.hasPermission) {
+              console.error('Permission not granted: WRITE_EXTERNAL_STORAGE'); 
+              return false;
+            }
+          }
+          console.log('Permission granted: WRITE_EXTERNAL_STORAGE');
+          return true;
+        } else if (androidVersion >= 13) {
+          console.log("this is 13+")
+
+          try {
+            const checkResult = await Manage_All_Access.checkAllFilesAccessPermission();
+            if (checkResult.hasPermission) {
+                console.log('Permission already granted: MANAGE_EXTERNAL_STORAGE');
+                return true;
+            }
+            await Manage_All_Access.requestAllFilesAccessPermission();
+            console.log('Permission granted: MANAGE_EXTERNAL_STORAGE');
+            return true;
+        } catch (error) {
+            console.error('Permission not granted: MANAGE_EXTERNAL_STORAGE', error);
+            return false;
+        }
+        } else {
+          console.log("9-")
+          const { publicStorage } = await Filesystem.requestPermissions();
+          if (publicStorage === 'granted') {
+            console.log('Permission granted: WRITE_EXTERNAL_STORAGE');
+            return true;
+          } else {
             console.error('Permission not granted: WRITE_EXTERNAL_STORAGE');
-            await this.presentAlert(); // Show a message to the user explaining why the permission is needed
             return false;
           }
         }
-        console.log('Permission granted: WRITE_EXTERNAL_STORAGE');
+      } else {
+        console.log('Not a native platform, permission request not needed');
         return true;
-      } else { 
-        // Use original method for platforms other than Android 10+
-        const { publicStorage } = await Filesystem.requestPermissions();
-        if (publicStorage === 'granted') {
-          console.log('Permission granted: WRITE_EXTERNAL_STORAGE');
-          return true;
-        } else {
-          console.error('Permission not granted: WRITE_EXTERNAL_STORAGE');
-          await this.presentAlert(); // Show a message to the user explaining why the permission is needed
-          return false;
-        }
       }
-    } catch (error) {
-      console.error('Error requesting permission:', error);
-      return false;
+    } else {
+      console.log('Not a native platform, permission request not needed');
+      return true;
     }
-  } else {
-    console.log('Not a native platform, permission request not needed');
-    return true;
+  } catch (error) {
+    console.error('Error in requestWriteExternalStoragePermission:', error);
+    return false;
   }
+
+  return false;
 }
 
 

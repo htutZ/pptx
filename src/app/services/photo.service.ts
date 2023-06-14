@@ -109,7 +109,7 @@
       if (this.logos.length < 2) {
         const capturedLogo = await Camera.getPhoto({
           resultType: CameraResultType.Uri,
-          allowEditing: true,
+          allowEditing: false,
           source: CameraSource.Photos,
           quality: 100
         });
@@ -131,7 +131,7 @@
       if (this.photos.length < 2) {
         const capturedPhoto = await Camera.getPhoto({
           resultType: CameraResultType.Uri,
-          allowEditing: true,
+          allowEditing: false,
           source: CameraSource.Camera,
           quality: 100
         });
@@ -150,7 +150,7 @@
       if (this.photos.length < 3) {
         const capturedPhoto = await Camera.getPhoto({
           resultType: CameraResultType.Uri,
-          allowEditing: true,
+          allowEditing: false,
           source: CameraSource.Camera,
           quality: 100
         });
@@ -169,7 +169,7 @@
       if (this.photos.length < 4) {
         const capturedPhoto = await Camera.getPhoto({
           resultType: CameraResultType.Uri,
-          allowEditing: true,
+          allowEditing: false,
           source: CameraSource.Camera,
           quality: 100
         });
@@ -226,7 +226,7 @@
       if (this.photos.length < 2) {
         const capturedPhoto = await Camera.getPhoto({
           resultType: CameraResultType.Uri,
-          allowEditing: true,
+          allowEditing: false,
           source: CameraSource.Photos,
           quality: 80
         });
@@ -247,7 +247,7 @@
       if (this.photos.length < 3) {
         const capturedPhoto = await Camera.getPhoto({
           resultType: CameraResultType.Uri,
-          allowEditing: true,
+          allowEditing: false,
           source: CameraSource.Photos,
           quality: 80
         });
@@ -268,7 +268,7 @@
       if (this.photos.length < 4) {
         const capturedPhoto = await Camera.getPhoto({
           resultType: CameraResultType.Uri,
-          allowEditing: true,
+          allowEditing: false,
           source: CameraSource.Photos,
           quality: 80
         });

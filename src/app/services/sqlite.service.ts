@@ -5,7 +5,9 @@ import { CapacitorSQLite, SQLiteDBConnection, SQLiteConnection, capSQLiteSet,
          capSQLiteChanges, capSQLiteValues, capEchoResult, capSQLiteResult,
          capNCDatabasePathResult } from '@capacitor-community/sqlite';
 
-@Injectable()
+@Injectable({
+  providedIn: 'root',
+})
 
 export class SQLiteService {
     sqlite!: SQLiteConnection;

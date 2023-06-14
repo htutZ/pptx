@@ -7,6 +7,7 @@ import { FinalpagePageRoutingModule } from './finalpage-routing.module';
 import { FileOpener } from '@ionic-native/file-opener/ngx';
 import { FinalpagePage } from './finalpage.page';
 import { AndroidPermissions } from '@ionic-native/android-permissions/ngx';
+import { Device } from '@ionic-native/device/ngx';
 
 @NgModule({
   imports: [
@@ -19,6 +20,7 @@ import { AndroidPermissions } from '@ionic-native/android-permissions/ngx';
   providers: [
     AndroidPermissions,
     FileOpener,
+    Device
   ],
   declarations: [FinalpagePage]
 })

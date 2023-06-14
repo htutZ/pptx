@@ -8,6 +8,7 @@ import { Powerpoint1PageRoutingModule } from './powerpoint1-routing.module';
 import { FileOpener } from '@ionic-native/file-opener/ngx';
 import { Powerpoint1Page } from './powerpoint1.page';
 import { AndroidPermissions } from '@ionic-native/android-permissions/ngx';
+import { Device } from '@ionic-native/device/ngx';
 
 @NgModule({
   imports: [
@@ -20,6 +21,7 @@ import { AndroidPermissions } from '@ionic-native/android-permissions/ngx';
   providers: [
     AndroidPermissions,
     FileOpener,
+    Device
   ],
   declarations: [Powerpoint1Page]
 })

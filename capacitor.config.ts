@@ -1,4 +1,5 @@
 import { CapacitorConfig } from '@capacitor/cli';
+import { KeyboardResize, KeyboardStyle } from '@capacitor/keyboard';
 
 const config: CapacitorConfig = {
   "appId": "io.ionic.starter",
@@ -13,6 +14,9 @@ const config: CapacitorConfig = {
       "iosBiometric": {
         "biometricAuth": false,
         "biometricTitle" : "Biometric login for capacitor sqlite"
+      },
+      Keyboard: {
+        resize: 'native',
       },
       "androidIsEncryption": false,
       "androidBiometric": {

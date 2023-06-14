@@ -4,29 +4,23 @@
 </ion-header>
 
 <ion-content class="ion-padding">
+  <div class="action-container">
+    <ion-card class="custom-card">
+      <ion-card-content>
+        <ion-button expand="full" color="tertiary" class="custom-button" (click)="createPresentation()">
+          <ion-icon slot="start" name="create-outline"></ion-icon>
+          Create a Presentation
+        </ion-button>
+      </ion-card-content>
+    </ion-card>
 
-  <ion-card class="ion-margin-bottom custom-card">
-    <ion-card-header>
-      <ion-card-title>Create a Presentation</ion-card-title>
-    </ion-card-header>
-    <ion-card-content>
-      <ion-button expand="full" color="primary" class="custom-button" (click)="createPresentation()">
-        <ion-icon slot="start" name="create-outline"></ion-icon>
-        Create
-      </ion-button>
-    </ion-card-content>
-  </ion-card>
-
-  <ion-card class="custom-card">
-    <ion-card-header>
-      <ion-card-title>Add More Slides</ion-card-title>
-    </ion-card-header>
-    <ion-card-content>
-      <ion-button expand="full" color="secondary" class="custom-button" (click)="newSlide()">
-        <ion-icon slot="start" name="add-outline"></ion-icon>
-        Add Slide
-      </ion-button>
-    </ion-card-content>
-  </ion-card>
-
+    <ion-card class="custom-card">
+      <ion-card-content>
+        <ion-button expand="full" color="secondary" class="custom-button" (click)="newSlide()">
+          <ion-icon slot="start" name="add-outline"></ion-icon>
+          Add More Slides
+        </ion-button>
+      </ion-card-content>
+    </ion-card>
+  </div>
 </ion-content>
