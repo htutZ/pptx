@@ -17,7 +17,7 @@ import { SQLiteService } from '../../services/sqlite.service';
 import { Device } from '@capacitor/device';
 import { Manage_All_Access } from 'manage-access';
 import { Keyboard } from '@capacitor/keyboard';
-import { FileWriterPlugin } from 'file-writer'
+import { FileWriter } from 'file-writer'
 
 const TEMPLATE1 = 'template1';
 const TEMPLATE2 = 'template2';
@@ -373,57 +373,45 @@ export class FinalpagePage implements OnInit {
       const fullFileName = `${fileName}.pptx`;
       pptx.write("base64")
       .then(async (base64Data) => {
-        const blob = `data:application/vnd.openxmlformats-officedocument.presentationml.presentation;base64,${base64Data}`;
-        
+        // const blob = `data:application/vnd.openxmlformats-officedocument.presentationml.presentation;base64,${base64Data}`;
+  
+       console.log("Base64 data: ", base64Data);
         try {
           await loading.present();
-  
-          const newFolder = 'powerpoints';
-          const entries = await Filesystem.readdir({
-            path: '',
-            directory: Directory.External,
+          // Use FileWriterPlugin to create the file
+          console.log("htut-0.8")
+
+
+          let stringData;
+
+if(base64Data instanceof ArrayBuffer) {
+    const decoder = new TextDecoder('utf8');
+    stringData = decoder.decode(base64Data);
+} else if (typeof base64Data === 'string') {
+    stringData = base64Data;
+} else {
+    console.error('Invalid base64Data type. Expected ArrayBuffer or string.');
+    return;
+}
+
+          const result = await FileWriter.createDocument({
+            fileName: fullFileName,
+            fileContent: stringData,
           });
-          const directoryExists = entries.files.some((entry) => entry.name === newFolder);
-        
-             if (!directoryExists) {
-            await Filesystem.mkdir({
-              path: newFolder,
-              directory: Directory.External,
-              recursive: true, 
-            });
-          }
-        
-          try {
-            const result = await Filesystem.writeFile({
-                path: `${newFolder}/${fullFileName}`,
-                data: blob,
-                directory: Directory.External,
-            });
-            console.log('Write result:', result);  // Log the result for debugging
-        } catch (err) {
-            console.error('Error writing file:', err);
-            throw err;  // Rethrow the error to be caught in the outer try-catch block
-        }
-        
-          const fileUri = await Filesystem.getUri({
-            path: `${newFolder}/${fullFileName}`,
-            directory: Directory.External,
-          }).catch((error) => {
-            console.error("Error getting file URI:", error);
-            throw error;
-          });
+          console.log('Write result:', result);
           
+          // Delete the slide files
           for (let filename of slideFileNames) {
             await Filesystem.deleteFile({
               path: filename,
               directory: Directory.Data,
             });
           }
-  
-          await loading.dismiss();
+          
           console.log('Presentation saved successfully.');
-          alert(`Presentation was created successfully. File saved at: ${fileUri.uri}`);
-  
+          alert(`Presentation was created successfully. File saved at: ${result.uri}`);
+          
+        
           const alertDialog = await this.alertController.create({
             header: 'File saved successfully',
             message: 'Do you want to open the file?',
@@ -431,7 +419,7 @@ export class FinalpagePage implements OnInit {
               {
                 text: 'Confirm',
                 handler: () => {
-                  this.openFileLocation(fileUri.uri); 
+                  this.openFileLocation(result.uri); 
                 },
               },
               {
@@ -441,17 +429,18 @@ export class FinalpagePage implements OnInit {
             ],
           });
           await alertDialog.present();
-  
         } catch (err) {
-          await loading.dismiss();
           console.error('Error: Presentation was not created:', err);
           alert('Saving file does not complete.');
+        } finally {
+          await loading.dismiss();
         }
-        }) 
+      }) 
     } catch (err) {
       console.error("Error creating presentation: ", err);
       alert('Error: Presentation was not created.');
     }
+  
   }
   
   isLogoSelected(): boolean {

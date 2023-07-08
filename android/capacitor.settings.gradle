@@ -41,5 +41,8 @@ project(':capacitor-doze-optimize').projectDir = new File('../node_modules/capac
 include ':capacitor-native-settings'
 project(':capacitor-native-settings').projectDir = new File('../node_modules/capacitor-native-settings/android')
 
+include ':file-writer'
+project(':file-writer').projectDir = new File('../node_modules/file-writer/android')
+
 include ':manage-access'
 project(':manage-access').projectDir = new File('../node_modules/manage-access/android')
