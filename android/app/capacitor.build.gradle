@@ -22,6 +22,7 @@ dependencies {
     implementation project(':capacitor-storage')
     implementation project(':capacitor-doze-optimize')
     implementation project(':capacitor-native-settings')
+    implementation project(':file-writer')
     implementation project(':manage-access')
 
 }

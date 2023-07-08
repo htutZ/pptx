@@ -7,6 +7,10 @@ const config: CapacitorConfig = {
   "webDir": "www",
   "bundledWebRuntime": true,
   "plugins": {
+    "FileWriter": {
+      "package": "file-writer",
+      "version": "0.0.1"
+    },
     "CapacitorSQLite": {
       "iosDatabaseLocation": "Library/CapacitorDatabase",
       "iosIsEncryption": false,
